@@ -1,4 +1,4 @@
-// Interface pour la spécification d'une pile polymorphe
+// Interface pour la spécification d'une pile synchrone polymorphe
 
 #ifndef FILE_H
 #define FILE_H
@@ -20,20 +20,22 @@ typedef struct info info;
 // sinon renvois l'addresse d'un descripteur permétant d'y accéder.
 extern const struct info *file_vide(const char *name, int oflag, mode_t mode, size_t size);
 
+// Ouvre un espace mémoire éxistant et renvois une structure affin d'y accéder
+// avec les autres fonctions de la librairie.
+// Renvois NULL en cas d'érreur.
+extern const struct info *file_ouvre(const char *name, int oflag, mode_t mod);
+
 // ajoute l'éléments pointer par ptr à la fin de la file décrit pas f.
 // Renvois NULL si ptr == null ou en cas de dépassement de capacité mémoire,
 // sinon renvois ptr;
 extern const void *file_ajout(const info *f, const void *ptr);
 
 // Défile la file s, renvois nulle si la file et vide sinon renvois l'address
-// de l'élément qui était au début de la file
+// d'une copie de l'élément qui était au début de la file.
 extern const void *file_retirer(info *f);
 
 // Renvois vrais ou faux si la file s est vide.
 extern bool file_est_vide(const info *f);
-
-// Renvois la hauteur de la file S.
-extern size_t file_hauter(const info *f);
 
 // SI *sptr n'est pas NULL, libére la mémoire alouer à la pile puis donne à
 // *sptr la valeur NULL
