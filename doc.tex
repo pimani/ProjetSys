@@ -1,0 +1,48 @@
+\documentclass[12pt]{article}
+\usepackage[francais]{babel}
+\usepackage[utf8]{inputenc}  
+\usepackage[T1]{fontenc}  
+
+\title{Projet Systéme d'exploitation}
+\author{Pierre Barthélemy, Mathieu Blondel}
+\date{\today}
+
+\begin{document}
+\maketitle
+\newpage
+\tableofcontents
+\newpage
+\section{Introduction}
+    Réalisation d'un lanceur de commande en ligne de commande, le projet permétera de lancer des commandes à partir de plusieurs client en déffinissant des pipes comme entrée et sortie standard à ses commande. Les commandes sont éxécuter par un unique serveur.
+    Le programme est déveloper en 3 partie, une file synchonisée, un serveur et un client.
+\section*{file synchronisée}
+    La liste d'attente synchronisée est réaliser à partie d'un espace de mémoire partagé, de deux sémaphore permétant l'accès à plusieurs processus, il ressoit les demandes des clients, se fait lire et vider par le serveur.
+\section*{serveur}
+    Le serveur va en récupérant la demande venant d'un client via la file synchonisée, éxécuter la commande voulus dans un nouveau procéssus avec les pipes fournis comme entrée et sortie standard.
+\section*{client}
+    Le client créer deux pipes pour l'entrée et la sortie standard, ajoute sa demande à la file d'attente, écoute et envois ses donnée sur les pipes.
+
+\newpage
+\section{File synchronisée}
+    La file synchonisée utilise une structure de donnée pour permetre l'accée :\\
+    La structure stocke le nom de l'espace de mémoire partagé et ses droits.
+    la liste des fonctions implémenter :
+    \begin{description}
+        \item [file *file\_vide(void)] Créer une structure correspondant à une file vide et un espace de mémoire partagé nommé sur le qu'elle se trouve la structure.\\
+        Renvois une structure de donnée décrivant la file afin de pouvoir y accéder.\\
+        Renvois NULL en cas de dépassement de capacité mémoire.
+        \item [const void *file\_ajout(file *f, const void *ptr, size\_t msize, size\_t ns)]  Ajoute l'éléments pointer par ptr à la fin de la file s.\\
+        Renvois ptr.\\
+        Renvois NULL si ptr == null ou en cas de dépassement de capacité mémoire.;
+        \item [const void *file\_retirer(file *f)] Défile la file s, renvois nulle si la file et vide sinon renvois l'address de l'élément qui était au début de la file.
+        \item [bool file\_est\_vide(const file *f)] Renvois vrais ou faux si la file s est vide.
+    \end{description}
+
+\newpage
+\section{Serveur}
+    Le serveur lis la file synchonisée pour avoir les différentes commandes à éxécuter, quand une commande est ressus il créer un nouveau thread qui aura pour tache de s'en occuper.
+
+\newpage
+\section{Client}
+
+\end{document}
