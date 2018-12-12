@@ -13,31 +13,36 @@
 #include "lanceur.h"
 #include "client.h"
 
-#define NOM_FIFOW "write_tube_123456"
-#define NOM_FIFOR "read_tube_1234567"
-
 int main(void) {
-  if (mkfifo(NOM_FIFOW, S_IRUSR | S_IWUSR) == -1) {
+  char wtubename[MAX_NOM_SIZE];
+  strcpy(wtubename, NOM_FIFOW);
+  sprintf(strpid + strlen(wtubename), "%d", getpid());
+  char rtubename[MAX_NOM_SIZE];
+  strcpy(rtubename, NOM_FIFOR);
+  sprintf(strpid + strlen(rtubename), "%d", getpid());
+  
+  if (mkfifo(wtubename, S_IRUSR | S_IWUSR) == -1) {
     perror("mkfifo wtube");
     exit(EXIT_FAILURE);
   }
-  if (mkfifo(NOM_FIFOR, S_IRUSR | S_IWUSR) == -1) {
+  if (mkfifo(rtubename, S_IRUSR | S_IWUSR) == -1) {
     perror("mkfifo rtube");
     exit(EXIT_FAILURE);
   }
   
-  fdw = open(NOM_FIFO, O_WRONLY);
+  fdw = open(wtubename, O_WRONLY);
   if (fdw == -1) {
     perror("open wtube");
     exit(EXIT_FAILURE);
   }
+  dup2(0, fdw);
   
-  fdr = open(NOM_FIFO, O_RDONLY);
+  fdr = open(rtubename, O_RDONLY);
   if (fdr == -1) {
     perror("open rtube");
     exit(EXIT_FAILURE);
   }
-  dup2(fdw,0);
+  dup2(1, fdr);
   
   argsc cmd;
   for (int i = 0; i < 3; ++i) {
@@ -50,4 +55,21 @@ int main(void) {
     perror("fgets");
     exit(EXIT_FAILURE);
   }
+  
+  int shm_fd = shm_open(NOM_SHM, O_RDWR, S_IRUSR | S_IWUSR);
+  if (shm_fd == -1) {
+    perror("shm_open");
+    exit(EXIT_FAILURE);
+  }
+  if (shm_unlink(NOM_SHM) == -1) {
+    perror("shm_unlink");
+    exit(EXIT_FAILURE);
+  }
+  // TAILLE_STRUCT = sizeof(struct d'un élément)
+  info *info_p = mmap(NULL, TAILLE_STRUCT, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+  if (info_p == MAP_FAILED) {
+    perror("mmap");
+    exit(EXIT_FAILURE);
+  }
+  return EXIT_SUCCESS;
 }
