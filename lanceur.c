@@ -11,21 +11,25 @@
 #include <pthread.h>
 #include <string.h>
 
-#include "infosm.h"
+#include "fifosm.h"
 #include "lanceur.h"
+
+#define TUBE_LENGHT 32
+#define ARG_LENGHT 32
+#define ARG_NUMBER 5
+#define ENVIRONEMENT_LENGHT 20
 
 // Structure de transmission de demande
 struct argsc {
-  char* argv[3];
-  char* envp[1];
+  char argv[ARG_NUMBER][ARG_LENGHT];
+  char envp[ENVIRONEMENT_LENGHT];
+  char tube_in[TUBE_LENGHT];
+  char tube_out[TUBE_LENGHT];
 };
 
 #define NOM_FILE "/ma_file_a_moi_786432985365428"
-#define N 10
 
 info *info_p = NULL;
-
-#define TAILLE_SHM (sizeof(info) + N)
 
 void * run(void * arg) {
   if (arg == NULL) {
@@ -34,7 +38,7 @@ void * run(void * arg) {
   }
   char* argv[] = {"/bin/ps", "-j", NULL};
   char* envp[] = {NULL};
-  
+
   switch (fork()) {
   case -1:
     perror("fork");
@@ -47,48 +51,28 @@ void * run(void * arg) {
     perror("execve");
     // fermer le tube en cas d'erreur
   }
-  
+
   return NULL;
 }
 
 int main(void) {
   // On commence par créer un segment de mémoire partagée
-  int shm_fd = shm_open(NOM_SHM, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
-  if (shm_fd == -1) {
-    perror("shm_open");
-    exit(EXIT_SUCCESS);
-  }
-  if (shm_unlink(NOM_SHM) == -1) {
-    perror("shm_unlink");
-    exit(EXIT_FAILURE);
-  }
-  if (ftruncate(shm_fd, TAILLE_SHM) == -1) {
-    perror("ftruncate");
-    exit(EXIT_FAILURE);
-  }
-  char *shm_ptr = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-  if (shm_ptr == MAP_FAILED) {
-    perror("sem_open");
-    exit(EXIT_FAILURE);
-  }
 
-  info_p = (struct info*) shm_ptr;
-  info_p->tete = 0;
-  info_p->queue = 0;
-  
-  argsc comm;
-  do {
-    // bloquant a lexe pas besoin de while et doc
-    while (file_est_vide((const) info_p));
-    argsc = file_retirer(info_p);
+  const info *descriptor = file_vide(NOM_FILE, O_RDWR | O_CREAT | O_EXCL,
+    S_IRUSR | S_IWUSR, sizeof(argsc));
+  if (descriptor == NULL) {
+    perror("création file");
+    exit(EXIT_FAILURE);
+  }
+  // bloquant a lexe pas besoin de while et doc
+  argsc *temp;
+  while ((temp = (argsc *)file_retirer(descriptor)) != NULL) {
     pthread_t th;
-    if (pthread_create(&th, NULL, run, *argsc) != 0) {
+    if (pthread_create(&th, NULL, run, temp) != 0) {
         fprintf(stderr, "Erreur\n");
         exit(EXIT_FAILURE);
     }
     pthread_exit(NULL);
-
-  } while (1);
-  
+  }
   return EXIT_SUCCESS;
 }

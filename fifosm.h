@@ -1,7 +1,7 @@
 // Interface pour la spécification d'une pile synchrone polymorphe
 
-#ifndef FILE_H
-#define FILE_H
+#ifndef FIFOSM_H
+#define FIFOSM_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -28,12 +28,13 @@ extern const struct info *file_ouvre(const char *name, int oflag, mode_t mod);
 // ajoute l'éléments pointer par ptr à la fin de la file décrit pas f.
 // Renvois NULL si ptr == null ou en cas de dépassement de capacité mémoire,
 // sinon renvois ptr;
-extern const void *file_ajout(struct info *f, const void *ptr);
+extern const void *file_ajout(info *f, const void *ptr);
 
 // Défile la file s, renvois nulle si la file et vide sinon renvois l'address
 // d'une copie de l'élément qui était au début de la file, la libération de la
 // mémoire lier à cette éléments est laisser à la discrétion de l'utisateur.
-extern const void *file_retirer(info *f);
+// L'opération est bloquante tant en attendant de pouvoir dépiler un élément.
+extern void *file_retirer(const info *f);
 
 // Renvois vrais ou faux si la file s est vide.
 extern bool file_est_vide(const info *f);
@@ -41,3 +42,5 @@ extern bool file_est_vide(const info *f);
 // libérer l'espace de mémoire partager et détruit les sémaphore, renvois -1 en cas
 // d'érreur
 extern int file_vider(info *f);
+
+#endif

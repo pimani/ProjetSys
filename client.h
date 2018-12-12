@@ -14,5 +14,4 @@
 #include <fcntl.h>
 #include <pthread.h>
 
-#define NOM_FIFOW "write_tube_"
-#define NOM_FIFOR "read_tube_"
+#endif
