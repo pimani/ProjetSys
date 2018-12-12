@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 #define SHM_ACTIVE "shm_active648646"
@@ -14,48 +15,22 @@
 
 struct info {
   const char *name;
-  size_t elementSize;
   int shared;
 };
 
 struct file {
-  size_t sharedSize;
+  size_t sharedNumber;
   size_t elementSize;
   size_t count;
-  size_t first;
-  sem_t *active;
-  sem_t *number;
+  size_t head;
+  size_t tail;
+  sem_t mutex;
+  sem_t full;
+  sem_t free;
   char array[];
 };
 
-//sem_t *create_shm(char *name, int oflag, mode_t mode) {
-  //int f;
-  //if ((f = shm_open(name, oflag, mode)) == -1) {
-    //perror("Ne peux pas ouvrir de la mémoire partager");
-    //return NULL;
-  //}
-
-  //if (shm_unlink(name) == -1) {
-    //perror("shm_unlink");
-    //return NULL;
-  //}
-
-  //if (ftruncate(f, TAILLE_SHM) == -1) {
-    //perror("Ne peux pas obtenier la taille voulus");
-    //return NULL;
-  //}
-
-  //sem_t *p = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, f, 0);
-  //if (p == MAP_FAILED) {
-    //perror("mmap");
-    //return NULL;
-  //}
-  //if (sem_init(p, 1, 0) == -1) {
-    //perror("sem_init");
-    //return NULL;
-  //}
-  //return p;
-//}
+int expend_shm(int fd);
 
 struct info *file_vide(const char *name, int oflag, mode_t mode, size_t size) {
   if (size <= 0) {
@@ -77,11 +52,10 @@ struct info *file_vide(const char *name, int oflag, mode_t mode, size_t size) {
     return NULL;
   }
 
-  descriptor -> elementSize = size;
   descriptor -> name = name;
   descriptor -> shared = f;
 
-  if (ftruncate(f, sizeof(struct file) + DEFAULT_NUMBER * sizeof(char)) == -1) {
+  if (ftruncate(f, (off_t)(sizeof(struct file) + DEFAULT_NUMBER * size)) == -1) {
     perror("Ne peux pas obtenier la taille voulus");
     return NULL;
   }
@@ -90,27 +64,148 @@ struct info *file_vide(const char *name, int oflag, mode_t mode, size_t size) {
     perror("mmap");
     exit(EXIT_FAILURE);
   }
-  fi -> sharedSize = sizeof(struct file) + DEFAULT_NUMBER * sizeof(char);
+  fi -> sharedNumber = DEFAULT_NUMBER;
   fi -> elementSize = size;
   fi -> count = 0;
-  fi -> first = 0;
-  if (sem_init(fi -> active, 1, 1) == -1) {
+  fi -> head = 0;
+  fi -> tail = 0;
+  if (sem_init(&fi -> mutex, 1, 1) == -1) {
     perror("sem_init");
     return NULL;
   }
-  if (sem_init(fi -> number, 1, 0) == -1) {
+  if (sem_init(&fi -> full, 1, 0) == -1) {
+    perror("sem_init");
+    return NULL;
+  }
+  if (sem_init(&fi -> free, 1, DEFAULT_NUMBER) == -1) {
     perror("sem_init");
     return NULL;
   }
   return descriptor;
 }
 
-const void *file_ajout(const struct info *f, const void *ptr) {
+const struct info *file_ouvre(const char *name) {
+  int f;
+  struct info *descriptor = malloc(sizeof *descriptor);
+  if (descriptor == NULL) {
+    return NULL;
+  }
+
+  if ((f = shm_open(name, O_RDWR, S_IRUSR | S_IWUSR)) == -1) {
+    perror("Ne peux pas ouvrir de la mémoire partager");
+    return NULL;
+  }
+  if (shm_unlink(name) == -1) {
+    perror("shm_unlink");
+    return NULL;
+  }
+
+  struct file *fi = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, f, 0);
+  if (fi == MAP_FAILED) {
+    perror("mmap");
+    exit(EXIT_FAILURE);
+  }
+
+  descriptor -> name = name;
+  descriptor -> shared = f;
+  return descriptor;
+}
+
+const void *file_ajout(struct info *f, const void *ptr) {
   if (ptr == NULL) {
     return NULL;
   }
-  return ptr;
-  if ((f -> count)) {
-
+  char *temp = (char *)ptr;
+  struct file *fi = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED,
+      f -> shared, 0);
+  if (fi == MAP_FAILED) {
+    perror("mmap");
+    exit(EXIT_FAILURE);
   }
+  if (sem_wait(&fi->mutex) == -1) {
+    perror("sem_wait");
+    exit(EXIT_FAILURE);
+  }
+  int test = 0;
+  if (fi -> count == fi -> sharedNumber) {
+    test = expend_shm(f -> shared);
+  }
+  if (test == -1) {
+    if (sem_post(&fi->mutex) == -1) {
+      perror("sem_post");
+      exit(EXIT_FAILURE);
+    }
+    if (sem_wait(&fi->free) == -1) {
+      perror("sem_wait");
+      exit(EXIT_FAILURE);
+    }
+    if (sem_wait(&fi->mutex) == -1) {
+      perror("sem_wait");
+      exit(EXIT_FAILURE);
+    }
+  }
+  memcpy(&(fi -> array[fi -> tail]), temp, fi -> elementSize);
+  fi -> head = (fi -> head + fi -> elementSize) % (fi -> sharedNumber * fi -> elementSize);
+  fi -> count += 1;
+  if (sem_post(&fi->mutex) == -1) {
+    perror("sem_post");
+    exit(EXIT_FAILURE);
+  }
+  if (sem_post(&fi->full) == -1) {
+    perror("sem_post");
+    exit(EXIT_FAILURE);
+  }
+  return (void *)ptr;
+}
+
+const void *file_retirer(struct info *f) {
+  struct file *fi = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED,
+      f -> shared, 0);
+  if (fi == MAP_FAILED) {
+    perror("mmap");
+    exit(EXIT_FAILURE);
+  }
+  if (sem_wait(&fi -> full) == -1) {
+    perror("sem_wait");
+    exit(EXIT_FAILURE);
+  }
+  if (sem_wait(&fi -> mutex) == -1) {
+    perror("sem_wait");
+    exit(EXIT_FAILURE);
+  }
+  char *value = malloc(fi -> elementSize);
+  if (value == NULL) {
+    return NULL;
+  }
+
+  memcpy(value, &(fi -> array[fi -> tail]), fi -> elementSize);
+  fi -> tail = (fi -> tail + fi -> elementSize) % (fi -> sharedNumber * fi -> elementSize);
+
+  if (sem_post(&fi -> mutex) == -1) {
+    perror("sem_post");
+    exit(EXIT_FAILURE);
+  }
+  if (sem_post(&fi -> free) == -1) {
+    perror("sem_post");
+    exit(EXIT_FAILURE);
+  }
+
+  return value;
+}
+
+// Renvois fd en cas de succés sinon renvois -1
+int expend_shm(int fd) {
+  struct file *fi = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED,
+      fd, 0);
+  if (fi == MAP_FAILED) {
+    perror("mmap");
+    exit(EXIT_FAILURE);
+  }
+  size_t newsize = fi -> elementSize * (fi -> sharedNumber * 2);
+  if (ftruncate(fd, (off_t)(sizeof(struct file) + newsize)) == -1) {
+    perror("Ne peux pas obtenier la taille voulus");
+    return -1;
+  }
+  fi -> sharedNumber *= 2;
+  return fd;
 }

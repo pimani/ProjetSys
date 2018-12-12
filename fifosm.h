@@ -23,12 +23,12 @@ extern const struct info *file_vide(const char *name, int oflag, mode_t mode, si
 // Ouvre un espace mémoire éxistant et renvois une structure affin d'y accéder
 // avec les autres fonctions de la librairie.
 // Renvois NULL en cas d'érreur.
-extern const struct info *file_ouvre(const char *name);
+extern const struct info *file_ouvre(const char *name, int oflag, mode_t mod);
 
 // ajoute l'éléments pointer par ptr à la fin de la file décrit pas f.
 // Renvois NULL si ptr == null ou en cas de dépassement de capacité mémoire,
 // sinon renvois ptr;
-extern const void *file_ajout(const info *f, const void *ptr);
+extern const void *file_ajout(struct info *f, const void *ptr);
 
 // Défile la file s, renvois nulle si la file et vide sinon renvois l'address
 // d'une copie de l'élément qui était au début de la file.
