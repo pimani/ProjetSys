@@ -11,30 +11,21 @@
 #include <pthread.h>
 #include <string.h>
 
-#include "fifosm.h"
+#include "infosm.h"
 #include "lanceur.h"
 
+// Structure de transmission de demande
 struct argsc {
   char* argv[3];
   char* envp[1];
 };
 
-/**
- * Un nom de segment de mémoire partagé avec un identifiant pour nous assurer de son unicité.
- */
 #define NOM_FILE "/ma_file_a_moi_786432985365428"
-
-// Taille de notre tampon
 #define N 10
 
-fifo *fifo_p = NULL;
+info *info_p = NULL;
 
-/**
- * On met dans notre shm :
- * - une ent-ête contenant toutes les variables permettant la manipulation du tampon ;
- * - un tampon de N caractères.
- */
-#define TAILLE_SHM (sizeof(fifo) + N)
+#define TAILLE_SHM (sizeof(info) + N)
 
 void * run(void * arg) {
   if (arg == NULL) {
@@ -54,6 +45,7 @@ void * run(void * arg) {
     // On exécute la commande
     execve(argv[0], argv, envp);
     perror("execve");
+    // fermer le tube en cas d'erreur
   }
   
   return NULL;
@@ -66,47 +58,29 @@ int main(void) {
     perror("shm_open");
     exit(EXIT_SUCCESS);
   }
-
   if (shm_unlink(NOM_SHM) == -1) {
     perror("shm_unlink");
     exit(EXIT_FAILURE);
   }
-
   if (ftruncate(shm_fd, TAILLE_SHM) == -1) {
     perror("ftruncate");
     exit(EXIT_FAILURE);
   }
-
   char *shm_ptr = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
   if (shm_ptr == MAP_FAILED) {
     perror("sem_open");
     exit(EXIT_FAILURE);
   }
 
-  fifo_p = (struct fifo *) shm_ptr;
-
-  // Initialisation des variables
-  if (sem_init(&fifo_p->mutex, 1, 1) == -1) {
-    perror("sem_init");
-    exit(EXIT_FAILURE);
-  }
-
-  if (sem_init(&fifo_p->vide, 1, N) == -1) {
-    perror("sem_init");
-    exit(EXIT_FAILURE);
-  }
-
-  if (sem_init(&fifo_p->plein, 1, 0) == -1) {
-    perror("sem_init");
-    exit(EXIT_FAILURE);
-  }
-
-  fifo_p->tete = 0;
-  fifo_p->queue = 0;
+  info_p = (struct info*) shm_ptr;
+  info_p->tete = 0;
+  info_p->queue = 0;
   
   argsc comm;
   do {
-    argsc = defiler(*la_file_synchro);
+    // bloquant a lexe pas besoin de while et doc
+    while (file_est_vide((const) info_p));
+    argsc = file_retirer(info_p);
     pthread_t th;
     if (pthread_create(&th, NULL, run, *argsc) != 0) {
         fprintf(stderr, "Erreur\n");
@@ -114,24 +88,7 @@ int main(void) {
     }
     pthread_exit(NULL);
 
-  } while (c md != NULL);
-
+  } while (1);
   
-  
-  
-  // Destruction des sémaphores
-  if (sem_destroy(&fifo_p->mutex) == -1) {
-    perror("sem_destroy");
-    exit(EXIT_FAILURE);
-  }
-  if (sem_destroy(&fifo_p->plein) == -1) {
-    perror("sem_destroy");
-    exit(EXIT_FAILURE);
-  }
-  if (sem_destroy(&fifo_p->vide) == -1) {
-    perror("sem_destroy");
-    exit(EXIT_FAILURE);
-  }
-
-  exit(EXIT_SUCCESS);
+  return EXIT_SUCCESS;
 }
