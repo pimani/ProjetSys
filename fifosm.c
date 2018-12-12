@@ -149,6 +149,7 @@ const void *file_ajout(struct info *f, const void *ptr) {
   memcpy(&(fi -> array[fi -> tail]), temp, fi -> elementSize);
   fi -> head = (fi -> head + fi -> elementSize) % (fi -> sharedNumber * fi -> elementSize);
   fi -> count += 1;
+
   if (sem_post(&fi->mutex) == -1) {
     perror("sem_post");
     exit(EXIT_FAILURE);

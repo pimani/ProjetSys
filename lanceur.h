@@ -16,6 +16,6 @@
 typedef struct argsc argsc;
 
 //Exécute le thread avec les arguments passés dans *arg
-extern void * run(void * arg);
+extern void * run(argsc * arg);
 
 #endif
