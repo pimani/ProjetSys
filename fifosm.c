@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+
 
 
 #define SHM_ACTIVE "shm_active648646"
@@ -30,7 +32,7 @@ struct file {
   char array[];
 };
 
-int expend_shm(int fd);
+int expend_shm(int f);
 
 struct info *file_vide(const char *name, int oflag, mode_t mode, size_t size) {
   if (size <= 0) {
@@ -180,7 +182,7 @@ const void *file_retirer(struct info *f) {
 
   memcpy(value, &(fi -> array[fi -> tail]), fi -> elementSize);
   fi -> tail = (fi -> tail + fi -> elementSize) % (fi -> sharedNumber * fi -> elementSize);
-
+  fi -> count -= 1;
   if (sem_post(&fi -> mutex) == -1) {
     perror("sem_post");
     exit(EXIT_FAILURE);
@@ -193,19 +195,55 @@ const void *file_retirer(struct info *f) {
   return value;
 }
 
-// Renvois fd en cas de succés sinon renvois -1
-int expend_shm(int fd) {
+bool file_est_vide(const struct info *f) {
   struct file *fi = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED,
-      fd, 0);
+      f -> shared, 0);
+  if (fi == MAP_FAILED) {
+    perror("mmap");
+    exit(EXIT_FAILURE);
+  }
+  return fi -> count == 0;
+}
+
+int file_vider(struct info *f) {
+  struct file *fi = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED,
+      f -> shared, 0);
+  if (fi == MAP_FAILED) {
+    perror("mmap");
+    return -1;
+  }
+  if (sem_destroy(&fi -> mutex) == -1) {
+    perror("sem_destroy");
+    return -1;
+  }
+  if (sem_destroy(&fi -> full) == -1) {
+    perror("sem_destroy");
+    return -1;
+  }
+  if (sem_destroy(&fi -> free) == -1) {
+    perror("sem_destroy");
+    return -1;
+  }
+  if (close(f -> shared) == -1) {
+    perror("server close");
+    return -1;
+  }
+  return 0;
+}
+
+// Renvois f en cas de succés sinon renvois -1
+int expend_shm(int f) {
+  struct file *fi = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED,
+      f, 0);
   if (fi == MAP_FAILED) {
     perror("mmap");
     exit(EXIT_FAILURE);
   }
   size_t newsize = fi -> elementSize * (fi -> sharedNumber * 2);
-  if (ftruncate(fd, (off_t)(sizeof(struct file) + newsize)) == -1) {
+  if (ftruncate(f, (off_t)(sizeof(struct file) + newsize)) == -1) {
     perror("Ne peux pas obtenier la taille voulus");
     return -1;
   }
   fi -> sharedNumber *= 2;
-  return fd;
+  return f;
 }
