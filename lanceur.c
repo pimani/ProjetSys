@@ -50,13 +50,36 @@ void * run(argsc *arg) {
   tempenv[0] = arg -> envp;
   tempenv[1] = NULL;
 
-  int mkfifo()
+  int fin;
+  if (fin = open(arg -> tube_in, O_RDWR) == -1) {
+    perror("Ouverture tube in");
+    free(arg);
+    exit(EXIT_FAILURE);
+  }
+  if (dup2(stdout, fin) == -1) {
+    perror("dup2");
+    free(arg);
+    exit(EXIT_FAILURE);
+  }
+
+  int fout;
+  if (fout = open(arg -> tube_out, O_RDWR) == -1) {
+    perror("Ouverture tube out");
+    free(arg);
+    exit(EXIT_FAILURE);
+  }
+  if (dup2(stdin, fout) == -1) {
+    perror("dup2");
+    free(arg);
+    exit(EXIT_FAILURE);
+  }
 
   switch (fork()) {
   case -1:
     perror("fork");
     exit(EXIT_FAILURE);
   case 0:
+    free(arg);
     exit(EXIT_SUCCESS);
   default:
     // On exécute la commande
