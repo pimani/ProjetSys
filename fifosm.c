@@ -245,7 +245,7 @@ int expend_shm(int f) {
     perror("Ne peux pas obtenier la taille voulus");
     return -1;
   }
-  for (size_t i = ; i < fi -> sharedNumber; i += 1) {
+  for (size_t i = 0; i < fi -> sharedNumber; i += 1) {
     sem_post(&fi -> free);
   }
   fi -> sharedNumber *= 2;
