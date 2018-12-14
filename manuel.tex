@@ -1,7 +1,7 @@
 \documentclass[12pt]{article}
 \usepackage[francais]{babel}
-\usepackage[utf8]{inputenc}  
-\usepackage[T1]{fontenc}  
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
 
 \title{Manuel d'utilisation du lanceur d'application}
 \author{Pierre Barthélemy, Mathieu Blondel}
@@ -13,7 +13,7 @@
 \tableofcontents
 \newpage
 \section{Introduction}
-    Réalisation d'un lanceur de commande en ligne de commande, le projet permétera de lancer des commandes à partir de plusieurs client en déffinissant des pipes comme entrée et sortie standard à ses commande. Les commandes sont éxécuter par un unique serveur.
+    Réalisation d'un lanceur de commande en ligne de commande, le projet permet de lancer des commandes à partir de plusieurs client en définissant des pipes comme entrée et sortie standard à ses commande. Les commandes sont éxécuter par un serveur unique.
     Le programme est déveloper en 2 sous programme, un serveur et un client.
 \section*{serveur}
     Le serveur c'est lui qui récupéra les demandes, les traiteras et fera le lien entre le programme et le client, il doit être lancer en premeir.
@@ -22,9 +22,22 @@
 \newpage
 
 \section{Serveur}
-    Le serveur lis la file synchonisée pour avoir les différentes commandes à éxécuter, quand une commande est ressus il créer un nouveau thread qui aura pour tache de s'en occuper.
-
+    L'utilisateur na rien à faire durant l'éxécution du serveur, il n'intervient que en début et en fin de tache.
+    Pour le lancer l'utilisateur na cas éxécuter l'éxécutable, pour l'arréter envoyer un signal ou une intéruption clavier.
+    Le serveur dois toujours être lancer en premier car il s'agit de lui qui créer l'espace de comunications entre procéssus.
+    Si il le souhaite l'utilisateur peux rediriger la sortie standard du programme afin d'avoir les logs d'écris dans un fichier.
 \newpage
+
 \section{Client}
+    Le client peux être éxécuter à n'importe le qu'elle moment de la vie du serveur.
+    Sont utilisation de passe par un similie d'interface dans le terminal via des entrée clavier:
+      \begin{enumerate}
+        \item Lancerment du logiciel
+        \item Donne le premier argument de la commande qui est la commande en elle même.
+        \item Donne jusqu'à 3 autre arguments.
+        \item Donne si il le souhaite des variables d'environements.
+      \end{enumerate}}
+    A la suite de sa la demande est envoyer et quand elle sera traiter l'utilisateur aura la main\\
+    sur l'entrée et la sortie standard de sa commande.
 
 \end{document}
