@@ -66,7 +66,7 @@ struct info *file_vide(const char *name, int oflag, mode_t mode, size_t size) {
     exit(EXIT_FAILURE);
   }
 
-  fi = (struct file *) temp;
+  struct file *fi = (struct file *) temp;
 
   fi -> sharedNumber = DEFAULT_NUMBER;
   fi -> elementSize = size;
