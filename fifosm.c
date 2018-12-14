@@ -50,10 +50,6 @@ struct info *file_vide(const char *name, int oflag, mode_t mode, size_t size) {
     perror("Ne peux pas ouvrir de la mémoire partager\n");
     return NULL;
   }
-  if (shm_unlink(name) == -1) {
-    perror("shm_unlink\n");
-    return NULL;
-  }
   descriptor -> shared = f;
 
   if (ftruncate(f, (off_t)(sizeof(struct file) + DEFAULT_NUMBER * size)) == -1) {
@@ -95,16 +91,12 @@ const struct info *file_ouvre(const char *name) {
     return NULL;
   }
 
-  if ((f = shm_open(name, O_RDWR, S_IRUSR | S_IWUSR)) == -1) {
+  if ((f = shm_open(name, O_WRONLY, S_IRWXU)) == -1) {
     perror("Ne peux pas ouvrir de la mémoire partager\n");
     return NULL;
   }
-  if (shm_unlink(name) == -1) {
-    perror("shm_unlink\n");
-    return NULL;
-  }
 
-  struct file *fi = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, f, 0);
+  struct file *fi = mmap(NULL, TAILLE_SHM, PROT_WRITE, MAP_SHARED, f, 0);
   if (fi == MAP_FAILED) {
     perror("mmap\n");
     exit(EXIT_FAILURE);
@@ -115,7 +107,7 @@ const struct info *file_ouvre(const char *name) {
   return descriptor;
 }
 
-const void *file_ajout(struct info *f, const void *ptr) {
+const void *file_ajout(const struct info *f, const void *ptr) {
   if (ptr == NULL) {
     return NULL;
   }
@@ -213,6 +205,10 @@ int file_vider(struct info *f) {
       f -> shared, 0);
   if (fi == MAP_FAILED) {
     perror("mmap\n");
+    return -1;
+  }
+  if (shm_unlink(f -> name) == -1) {
+    perror("shm_unlink\n");
     return -1;
   }
   if (sem_destroy(&fi -> mutex) == -1) {
