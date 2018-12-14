@@ -18,4 +18,10 @@ typedef struct argsc argsc;
 //Exécute le thread avec les arguments passés dans *arg
 extern void * run(argsc * arg);
 
+// Remplace le comportement par défaut pour les signaux d'intéruptions
+extern void handlerStop(int signum);
+
+// Gérer les signaux de fin de vie des enfants pour gérer les procéssus zombies
+extern void handlerFils(int signum);
+
 #endif

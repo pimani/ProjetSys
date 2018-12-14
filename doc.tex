@@ -3,6 +3,7 @@
 \usepackage[utf8]{inputenc}  
 \usepackage[T1]{fontenc}  
 
+
 \title{Projet Systéme d'exploitation}
 \author{Pierre Barthélemy, Mathieu Blondel}
 \date{\today}
@@ -33,16 +34,16 @@
         Renvois NULL en cas de dépassement de capacité mémoire ou si size <= 0\\
         sinon renvois l'addresse d'un descripteur permétant d'y accéder.
         
-        \item [const struct info *file\_ouvre(const char *name, int oflag, mode\_t mod)]Ouvre un espace mémoire éxistant et renvois une structure affin d'y accéder avec les autres fonctions de la librairie.\\
+        \item [const struct info *file\_ouvre(const char *name, int oflag, mode\_t mod)] Ouvre un espace mémoire éxistant et renvois une structure affin d'y accéder avec les autres fonctions de la librairie.\\
         Renvois NULL en cas d'érreur.
         
         \item [const void *file\_ajout(file *f, const void *ptr, size\_t msize, size\_t ns)]  Ajoute l'éléments pointer par ptr à la fin de la file décrit pas f.\\
         Si la file est pleine, tante de doubler la taille de la liste, en cas d'échec
         devient bloquant en attendant que la file se vide.\\
-        Renvois NULL si ptr == null ou en cas de dépassement de capacité mémoire,
-        sinon renvois ptr.
+        Renvois NULL si ptr == null ou en cas de dépassement de capacité mémoire, sinon renvois ptr.
         
-        \item [const void *file\_retirer(file *f)] Défile la file s, renvois nulle si la file et vide sinon renvois l'address d'une copie de l'élément qui était au début de la file, la libération de la mémoire lier à cette éléments est laisser à la discrétion de l'utisateur.
+        \item [const void *file\_retirer(file *f)] Défile la file s, renvois nulle si la file et vide sinon renvois l'address d'une copie de l'élément qui était au début de la file, la libération de la mémoire lier à cette éléments est laisser à la discrétion de l'utisateur.\\
+        L'opération est bloquante tant en attendant de pouvoir dépiler un élément.
         
         \item [bool file\_est\_vide(const file *f)] Renvois vrais ou faux si la file s est vide.
         
@@ -55,6 +56,13 @@
 \newpage
 \section{Serveur}
     Le serveur lis la file synchonisée pour avoir les différentes commandes à éxécuter, quand une commande est ressus il créer un nouveau thread qui aura pour tache de s'en occuper.\\
+    Les demandes sont transmise à traver un structure regroupant diverses informations :
+    \begin{description}
+        \item [argv] Liste des arguments de la commande, inclus la commande elle même
+        \item [envp] Arguments d'environement de la commande.
+        \item [tube\in] Nom du tube à relier à l'entrée standard de la commande.
+        \item [tube\_out] Nom du tube à relier à la sortie standard de la commande.
+    \end{description}
     Les tubes ressus ouvert dans l'ordre :
     \begin{enumerate}
         \item entrée standard permétant au client d'envoyer plus d'information à la commande.
@@ -62,7 +70,8 @@
     \end{enumerate}
     L'ouverture des tubes est à la discrétion du client.\\
     Dans le cas d'une commande transmise invalide, le serveur coupe le tube de retour sans rien écrire dedans.
+    Le serveur ne se stope que dans le cas d'une érreur ou d'un signal d'arrét par l'utilisateur.
 \newpage
 \section{Client}
-
+    Les tubes à l'honneur et le devoir de nommée les tubes qu'il veux utiliser.
 \end{document}

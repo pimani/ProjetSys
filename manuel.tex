@@ -1,0 +1,30 @@
+\documentclass[12pt]{article}
+\usepackage[francais]{babel}
+\usepackage[utf8]{inputenc}  
+\usepackage[T1]{fontenc}  
+
+\title{Manuel d'utilisation du lanceur d'application}
+\author{Pierre Barthélemy, Mathieu Blondel}
+\date{\today}
+
+\begin{document}
+\maketitle
+\newpage
+\tableofcontents
+\newpage
+\section{Introduction}
+    Réalisation d'un lanceur de commande en ligne de commande, le projet permétera de lancer des commandes à partir de plusieurs client en déffinissant des pipes comme entrée et sortie standard à ses commande. Les commandes sont éxécuter par un unique serveur.
+    Le programme est déveloper en 2 sous programme, un serveur et un client.
+\section*{serveur}
+    Le serveur c'est lui qui récupéra les demandes, les traiteras et fera le lien entre le programme et le client, il doit être lancer en premeir.
+\section*{client}
+    Le client c'est de lui dont viendra les demandes de l'utilisateur et avec le qu'elle il va intéragir, il doit être lancer après le serveur sinon ne pourra rien faire et renvéra une érreur.
+\newpage
+
+\section{Serveur}
+    Le serveur lis la file synchonisée pour avoir les différentes commandes à éxécuter, quand une commande est ressus il créer un nouveau thread qui aura pour tache de s'en occuper.
+
+\newpage
+\section{Client}
+
+\end{document}

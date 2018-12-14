@@ -30,7 +30,34 @@ struct argsc {
   char tube_out[TUBE_LENGHT];
 };
 
+info *descriptor;
+
 #define NOM_FILE "/ma_file_a_moi_786432985365428"
+
+int main(void) {
+  // On commence par créer un segment de mémoire partagée
+
+  descriptor = file_vide(NOM_FILE, O_RDWR | O_CREAT | O_EXCL,
+    S_IRUSR | S_IWUSR, sizeof(argsc));
+  if (descriptor == NULL) {
+    perror("création file");
+    exit(EXIT_FAILURE);
+  }
+  // bloquant a lexe pas besoin de while et doc
+  argsc *temp;
+  while ((temp = (argsc *)file_retirer(descriptor)) != NULL) {
+    printf("Nouvelle donnée");
+    pthread_t th;
+    if (pthread_create(&th, NULL,(void * (*)(void*))run, temp) != 0) {
+        fprintf(stderr, "Erreur\n");
+        exit(EXIT_FAILURE);
+    }
+    pthread_exit(NULL);
+  }
+  file_vider(descriptor);
+  return EXIT_SUCCESS;
+}
+
 
 void * run(argsc *arg) {
   printf("Nouveau thread");
@@ -71,6 +98,7 @@ void * run(argsc *arg) {
   if (dup2(stdin, fout) == -1) {
     perror("dup2");
     free(arg);
+    close(fin);
     exit(EXIT_FAILURE);
   }
 
@@ -79,38 +107,27 @@ void * run(argsc *arg) {
     perror("fork");
     exit(EXIT_FAILURE);
   case 0:
-    free(arg);
-    exit(EXIT_SUCCESS);
+    break
   default:
     // On exécute la commande
     execvpe(arg -> argv[0], temparg, tempenv);
     perror("execve");
     // fermer le tube en cas d'erreur
   }
-
+  free(arg);
+  close(fout);
+  close(fin);
   return NULL;
 }
 
-int main(void) {
-  // On commence par créer un segment de mémoire partagée
+void handlerFils(int signum) {
 
-  const info *descriptor = file_vide(NOM_FILE, O_RDWR | O_CREAT | O_EXCL,
-    S_IRUSR | S_IWUSR, sizeof(argsc));
-  if (descriptor == NULL) {
-    perror("création file");
+}
+
+void handlerStop(int signum) {
+  if (file_vider(const info *f) == -1) {
+    perror("Fermeture espace mémoire partager")
     exit(EXIT_FAILURE);
   }
-  // bloquant a lexe pas besoin de while et doc
-  argsc *temp;
-  while ((temp = (argsc *)file_retirer(descriptor)) != NULL) {
-    printf("Nouvelle donnée");
-    pthread_t th;
-    if (pthread_create(&th, NULL,(void * (*)(void*))run, temp) != 0) {
-        fprintf(stderr, "Erreur\n");
-        exit(EXIT_FAILURE);
-    }
-    pthread_exit(NULL);
-  }
-  file_vider(descriptor);
-  return EXIT_SUCCESS;
+  exit(EXIT_SUCCESS);
 }
