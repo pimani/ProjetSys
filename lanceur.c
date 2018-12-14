@@ -36,21 +36,36 @@ const info *descriptor;
 
 int main(void) {
 
-  struct sigaction action;
-  action.sa_handler = handlerStop;
-  action.sa_flags = 0;
-  if (sigfillset(&action.sa_mask) == -1) {
+  struct sigaction actionInt;
+  actionInt.sa_handler = handlerStop;
+  actionInt.sa_flags = 0;
+  if (sigfillset(&actionInt.sa_mask) == -1) {
     perror("sigfilltset");
     exit(EXIT_FAILURE);
   }
 
-  // On associe l'action à SIGINT
-  if (sigaction(SIGINT, &action, NULL) == -1) {
+  if (sigaction(SIGINT, &actionInt, NULL) == -1) {
     perror("sigaction");
     exit(EXIT_FAILURE);
   }
 
-  // On commence par créer un segment de mémoire partagée
+  if (sigaction(SIGHUP, &actionInt, NULL) == -1) {
+    perror("sigaction");
+    exit(EXIT_FAILURE);
+  }
+
+  struct sigaction actionChild;
+  actionChild.sa_handler = handlerFils;
+  actionChild.sa_flags = 0;
+  if (sigfillset(&actionChild.sa_mask) == -1) {
+    perror("sigfilltset");
+    exit(EXIT_FAILURE);
+  }
+  if (sigaction(SIGCHLD, &actionChild, NULL) == -1) {
+    perror("sigaction");
+    exit(EXIT_FAILURE);
+  }
+
   descriptor = file_vide(NOM_FILE, O_RDWR | O_CREAT | O_EXCL,
     S_IRUSR | S_IWUSR, sizeof(argsc));
   if (descriptor == NULL) {
@@ -134,13 +149,25 @@ void * run(argsc *arg) {
   return NULL;
 }
 
-//void handlerFils(int signum) {
-//  if (signum < 0) {
-//    fprintf(stderr, "Wrong signal number\n");
-//    exit(EXIT_FAILURE);
-//  }
-//
-//}
+void handlerFils(int signum) {
+  if (signum != SIGCHLD) {
+    fprintf(stderr, "Mauvais signal reçu.\n");
+    exit(EXIT_FAILURE);
+  }
+  int errno_old = errno;
+  int r;
+  do {
+    r = waitpid(-1, NULL, WNOHANG);
+  } while (r > 0);
+  if (r == -1) {
+    if (errno != ECHILD) {
+      perror("waitpid");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  errno = errno_old;
+}
 
 void handlerStop(int signum) {
   if (signum < 0) {
