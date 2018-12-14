@@ -30,20 +30,33 @@ struct argsc {
   char tube_out[TUBE_LENGHT];
 };
 
-info *descriptor;
+const info *descriptor;
 
 #define NOM_FILE "/ma_file_a_moi_786432985365428"
 
 int main(void) {
-  // On commence par créer un segment de mémoire partagée
 
+  struct sigaction action;
+  action.sa_handler = handlerStop;
+  action.sa_flags = 0;
+  if (sigfillset(&action.sa_mask) == -1) {
+    perror("sigfilltset");
+    exit(EXIT_FAILURE);
+  }
+
+  // On associe l'action à SIGINT
+  if (sigaction(SIGINT, &action, NULL) == -1) {
+    perror("sigaction");
+    exit(EXIT_FAILURE);
+  }
+
+  // On commence par créer un segment de mémoire partagée
   descriptor = file_vide(NOM_FILE, O_RDWR | O_CREAT | O_EXCL,
     S_IRUSR | S_IWUSR, sizeof(argsc));
   if (descriptor == NULL) {
     perror("création file");
     exit(EXIT_FAILURE);
   }
-  // bloquant a lexe pas besoin de while et doc
   argsc *temp;
   while ((temp = (argsc *)file_retirer(descriptor)) != NULL) {
     printf("Nouvelle donnée");
@@ -65,9 +78,6 @@ void * run(argsc *arg) {
     fprintf(stderr, "Unexpected argument value\n");
     exit(EXIT_FAILURE);
   }
-  printf("Exécute %s %s %s %s %s\n", arg -> argv[0], arg -> argv[1],
-    arg -> argv[2], arg -> argv[3], arg -> argv[4]);
-
   char *temparg[ARG_NUMBER + 1];
   for (size_t i = 0; i < ARG_NUMBER; i += 1) {
     temparg[i] = arg -> argv[i];
@@ -78,36 +88,42 @@ void * run(argsc *arg) {
   tempenv[1] = NULL;
 
   int fin;
-  if (fin = open(arg -> tube_in, O_RDWR) == -1) {
+  if ((fin = open(arg -> tube_in, O_RDWR)) == -1) {
     perror("Ouverture tube in");
     free(arg);
     exit(EXIT_FAILURE);
   }
-  if (dup2(stdout, fin) == -1) {
+  if (dup2(fin, STDOUT_FILENO) == -1) {
     perror("dup2");
     free(arg);
+    exit(EXIT_FAILURE);
+  }
+  if (close(fin) == -1) {
+    perror("close(fin)");
     exit(EXIT_FAILURE);
   }
 
   int fout;
-  if (fout = open(arg -> tube_out, O_RDWR) == -1) {
+  if ((fout = open(arg -> tube_out, O_RDWR)) == -1) {
     perror("Ouverture tube out");
     free(arg);
     exit(EXIT_FAILURE);
   }
-  if (dup2(stdin, fout) == -1) {
+  if (dup2(fout, STDIN_FILENO) == -1) {
     perror("dup2");
     free(arg);
-    close(fin);
     exit(EXIT_FAILURE);
   }
-
+  if (close(fout) == -1) {
+    perror("close(fout)");
+    exit(EXIT_FAILURE);
+  }
   switch (fork()) {
   case -1:
     perror("fork");
     exit(EXIT_FAILURE);
   case 0:
-    break
+    break;
   default:
     // On exécute la commande
     execvpe(arg -> argv[0], temparg, tempenv);
@@ -115,18 +131,24 @@ void * run(argsc *arg) {
     // fermer le tube en cas d'erreur
   }
   free(arg);
-  close(fout);
-  close(fin);
   return NULL;
 }
 
-void handlerFils(int signum) {
-
-}
+//void handlerFils(int signum) {
+//  if (signum < 0) {
+//    fprintf(stderr, "Wrong signal number\n");
+//    exit(EXIT_FAILURE);
+//  }
+//
+//}
 
 void handlerStop(int signum) {
-  if (file_vider(const info *f) == -1) {
-    perror("Fermeture espace mémoire partager")
+  if (signum < 0) {
+    fprintf(stderr, "Wrong signal number\n");
+    exit(EXIT_FAILURE);
+  }
+  if (file_vider(descriptor) == -1) {
+    perror("Fermeture espace mémoire partager");
     exit(EXIT_FAILURE);
   }
   exit(EXIT_SUCCESS);
