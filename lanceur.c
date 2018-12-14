@@ -13,26 +13,7 @@
 #include "fifosm.h"
 #include "lanceur.h"
 
-#define TUBE_LENGHT 32
-#define ARG_LENGHT 32
-#define ARG_NUMBER 5
-#define ENVIRONEMENT_LENGHT 20
-
-// Structure de transmission de demande, exemple :
-// char* argv[] = {"/bin/ps", "-j", NULL};
-// char* envp[] = {NULL};
-// char* tube_in = "mon tube pour savoir se qu'il se passe";
-// char* tube_out = "mon tube pour envoyer mes info";
-struct argsc {
-  char argv[ARG_NUMBER][ARG_LENGHT];
-  char envp[ENVIRONEMENT_LENGHT];
-  char tube_in[TUBE_LENGHT];
-  char tube_out[TUBE_LENGHT];
-};
-
 const info *descriptor;
-
-#define NOM_FILE "/ma_file_a_moi_786432985365428"
 
 int main(void) {
 
