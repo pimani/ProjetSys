@@ -16,7 +16,7 @@
 const info *descriptor;
 
 int main(void) {
-
+  printf("Serveur Start :\n");
   struct sigaction actionInt;
   actionInt.sa_handler = handlerStop;
   actionInt.sa_flags = 0;
@@ -47,13 +47,14 @@ int main(void) {
     exit(EXIT_FAILURE);
   }
 
-  descriptor = file_vide(NOM_FILE, O_RDWR | O_CREAT | O_EXCL,
-    S_IRUSR | S_IWUSR, sizeof(argsc));
+  printf("Ouverture de la file '%s'\n", NOM_FILE);
+  descriptor = file_vide(NOM_FILE, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, sizeof(argsc));
   if (descriptor == NULL) {
     perror("création file");
     exit(EXIT_FAILURE);
   }
   argsc *temp;
+  printf("En attente de donnée\n");
   while ((temp = (argsc *)file_retirer(descriptor)) != NULL) {
     printf("Nouvelle donnée");
     pthread_t th;

@@ -41,46 +41,48 @@ struct info *file_vide(const char *name, int oflag, mode_t mode, size_t size) {
 
   int f;
   struct info *descriptor = malloc(sizeof *descriptor);
+  descriptor -> name = name;
   if (descriptor == NULL) {
     return NULL;
   }
 
   if ((f = shm_open(name, oflag, mode)) == -1) {
-    perror("Ne peux pas ouvrir de la mémoire partager");
+    perror("Ne peux pas ouvrir de la mémoire partager\n");
     return NULL;
   }
   if (shm_unlink(name) == -1) {
-    perror("shm_unlink");
+    perror("shm_unlink\n");
     return NULL;
   }
-
-  descriptor -> name = name;
   descriptor -> shared = f;
 
   if (ftruncate(f, (off_t)(sizeof(struct file) + DEFAULT_NUMBER * size)) == -1) {
-    perror("Ne peux pas obtenier la taille voulus");
+    perror("Ne peux pas obtenier la taille voulus\n");
     return NULL;
   }
-  struct file *fi = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, f, 0);
-  if (fi == MAP_FAILED) {
-    perror("mmap");
+  char *temp = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, f, 0);
+  if (temp == MAP_FAILED) {
+    perror("mmap\n");
     exit(EXIT_FAILURE);
   }
+
+  fi = (struct file *) temp;
+
   fi -> sharedNumber = DEFAULT_NUMBER;
   fi -> elementSize = size;
   fi -> count = 0;
   fi -> head = 0;
   fi -> tail = 0;
   if (sem_init(&fi -> mutex, 1, 1) == -1) {
-    perror("sem_init");
+    perror("sem_init\n");
     return NULL;
   }
   if (sem_init(&fi -> full, 1, 0) == -1) {
-    perror("sem_init");
+    perror("sem_init\n");
     return NULL;
   }
   if (sem_init(&fi -> free, 1, DEFAULT_NUMBER) == -1) {
-    perror("sem_init");
+    perror("sem_init\n");
     return NULL;
   }
   return descriptor;
@@ -94,17 +96,17 @@ const struct info *file_ouvre(const char *name) {
   }
 
   if ((f = shm_open(name, O_RDWR, S_IRUSR | S_IWUSR)) == -1) {
-    perror("Ne peux pas ouvrir de la mémoire partager");
+    perror("Ne peux pas ouvrir de la mémoire partager\n");
     return NULL;
   }
   if (shm_unlink(name) == -1) {
-    perror("shm_unlink");
+    perror("shm_unlink\n");
     return NULL;
   }
 
   struct file *fi = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, f, 0);
   if (fi == MAP_FAILED) {
-    perror("mmap");
+    perror("mmap\n");
     exit(EXIT_FAILURE);
   }
 
@@ -121,11 +123,11 @@ const void *file_ajout(struct info *f, const void *ptr) {
   struct file *fi = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED,
       f -> shared, 0);
   if (fi == MAP_FAILED) {
-    perror("mmap");
+    perror("mmap\n");
     exit(EXIT_FAILURE);
   }
   if (sem_wait(&fi->mutex) == -1) {
-    perror("sem_wait");
+    perror("sem_wait\n");
     exit(EXIT_FAILURE);
   }
   int test = 0;
@@ -134,15 +136,15 @@ const void *file_ajout(struct info *f, const void *ptr) {
   }
   if (test == -1) {
     if (sem_post(&fi->mutex) == -1) {
-      perror("sem_post");
+      perror("sem_post\n");
       exit(EXIT_FAILURE);
     }
     if (sem_wait(&fi->free) == -1) {
-      perror("sem_wait");
+      perror("sem_wait\n");
       exit(EXIT_FAILURE);
     }
     if (sem_wait(&fi->mutex) == -1) {
-      perror("sem_wait");
+      perror("sem_wait\n");
       exit(EXIT_FAILURE);
     }
   }
@@ -151,29 +153,29 @@ const void *file_ajout(struct info *f, const void *ptr) {
   fi -> count += 1;
 
   if (sem_post(&fi->mutex) == -1) {
-    perror("sem_post");
+    perror("sem_post\n");
     exit(EXIT_FAILURE);
   }
   if (sem_post(&fi->full) == -1) {
-    perror("sem_post");
+    perror("sem_post\n");
     exit(EXIT_FAILURE);
   }
-  return (void *)ptr;
+  return ptr;
 }
 
 const void *file_retirer(struct info *f) {
   struct file *fi = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED,
       f -> shared, 0);
   if (fi == MAP_FAILED) {
-    perror("mmap");
+    perror("mmap\n");
     exit(EXIT_FAILURE);
   }
   if (sem_wait(&fi -> full) == -1) {
-    perror("sem_wait");
+    perror("sem_wait\n");
     exit(EXIT_FAILURE);
   }
   if (sem_wait(&fi -> mutex) == -1) {
-    perror("sem_wait");
+    perror("sem_wait\n");
     exit(EXIT_FAILURE);
   }
   char *value = malloc(fi -> elementSize);
@@ -185,11 +187,11 @@ const void *file_retirer(struct info *f) {
   fi -> tail = (fi -> tail + fi -> elementSize) % (fi -> sharedNumber * fi -> elementSize);
   fi -> count -= 1;
   if (sem_post(&fi -> mutex) == -1) {
-    perror("sem_post");
+    perror("sem_post\n");
     exit(EXIT_FAILURE);
   }
   if (sem_post(&fi -> free) == -1) {
-    perror("sem_post");
+    perror("sem_post\n");
     exit(EXIT_FAILURE);
   }
 
@@ -200,7 +202,7 @@ bool file_est_vide(const struct info *f) {
   struct file *fi = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED,
       f -> shared, 0);
   if (fi == MAP_FAILED) {
-    perror("mmap");
+    perror("mmap\n");
     exit(EXIT_FAILURE);
   }
   return fi -> count == 0;
@@ -210,23 +212,23 @@ int file_vider(struct info *f) {
   struct file *fi = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED,
       f -> shared, 0);
   if (fi == MAP_FAILED) {
-    perror("mmap");
+    perror("mmap\n");
     return -1;
   }
   if (sem_destroy(&fi -> mutex) == -1) {
-    perror("sem_destroy");
+    perror("sem_destroy\n");
     return -1;
   }
   if (sem_destroy(&fi -> full) == -1) {
-    perror("sem_destroy");
+    perror("sem_destroy\n");
     return -1;
   }
   if (sem_destroy(&fi -> free) == -1) {
-    perror("sem_destroy");
+    perror("sem_destroy\n");
     return -1;
   }
   if (close(f -> shared) == -1) {
-    perror("server close");
+    perror("server close\n");
     return -1;
   }
   return 0;
@@ -237,12 +239,12 @@ int expend_shm(int f) {
   struct file *fi = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED,
       f, 0);
   if (fi == MAP_FAILED) {
-    perror("mmap");
+    perror("mmap\n");
     exit(EXIT_FAILURE);
   }
   size_t newsize = fi -> elementSize * (fi -> sharedNumber * 2);
   if (ftruncate(f, (off_t)(sizeof(struct file) + newsize)) == -1) {
-    perror("Ne peux pas obtenier la taille voulus");
+    perror("Ne peux pas obtenier la taille voulus\n");
     return -1;
   }
   for (size_t i = 0; i < fi -> sharedNumber; i += 1) {
