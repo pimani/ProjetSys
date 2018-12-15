@@ -57,12 +57,46 @@ int main(void) {
   printf("En attente de donnée\n");
   while ((temp = (argsc *)file_retirer(descriptor)) != NULL) {
     printf("Nouvelle donnée");
+    int fin;
+    if ((fin = open(temp->tube_in, O_RDONLY)) == -1) {
+      perror("Ouverture tube in");
+      free(temp);
+      exit(EXIT_FAILURE);
+    }
+    if (dup2(fin, STDOUT_FILENO) == -1) {
+      perror("dup2");
+      free(temp);
+      exit(EXIT_FAILURE);
+    }
+
+    int fout;
+    if ((fout = open(temp->tube_out, O_WRONLY)) == -1) {
+      perror("Ouverture tube out");
+      free(temp);
+      exit(EXIT_FAILURE);
+    }
+    if (dup2(fout, STDIN_FILENO) == -1) {
+      perror("dup2");
+      free(temp);
+      exit(EXIT_FAILURE);
+    }
     pthread_t th;
     if (pthread_create(&th, NULL,(void * (*)(void*))run, temp) != 0) {
         fprintf(stderr, "Erreur\n");
-        exit(EXIT_FAILURE);
+        file_vider(descriptor);
+        return EXIT_FAILURE;
     }
     pthread_exit(NULL);
+
+    if (close(fin) == -1) {
+      perror("close(fin)");
+      exit(EXIT_FAILURE);
+    }
+    if (close(fout) == -1) {
+      perror("close(fout)");
+      exit(EXIT_FAILURE);
+    }
+    free(temp);
   }
   file_vider(descriptor);
   return EXIT_SUCCESS;
@@ -84,37 +118,6 @@ void * run(argsc *arg) {
   tempenv[0] = arg -> envp;
   tempenv[1] = NULL;
 
-  int fin;
-  if ((fin = open(arg -> tube_in, O_RDWR)) == -1) {
-    perror("Ouverture tube in");
-    free(arg);
-    exit(EXIT_FAILURE);
-  }
-  if (dup2(fin, STDOUT_FILENO) == -1) {
-    perror("dup2");
-    free(arg);
-    exit(EXIT_FAILURE);
-  }
-  if (close(fin) == -1) {
-    perror("close(fin)");
-    exit(EXIT_FAILURE);
-  }
-
-  int fout;
-  if ((fout = open(arg -> tube_out, O_RDWR)) == -1) {
-    perror("Ouverture tube out");
-    free(arg);
-    exit(EXIT_FAILURE);
-  }
-  if (dup2(fout, STDIN_FILENO) == -1) {
-    perror("dup2");
-    free(arg);
-    exit(EXIT_FAILURE);
-  }
-  if (close(fout) == -1) {
-    perror("close(fout)");
-    exit(EXIT_FAILURE);
-  }
   switch (fork()) {
   case -1:
     perror("fork");
@@ -124,10 +127,10 @@ void * run(argsc *arg) {
   default:
     // On exécute la commande
     execvpe(arg -> argv[0], temparg, tempenv);
+    file_vider(descriptor);
     perror("execve");
     // fermer le tube en cas d'erreur
   }
-  free(arg);
   return NULL;
 }
 

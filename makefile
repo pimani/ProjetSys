@@ -14,10 +14,10 @@ all: $(executable) $(executable2)
 clean:
 	$(RM) *.o *.a
 
-cleanAll:
+cleanall:
 	$(RM) *.o *.a $(executable) $(executable2)
 
-tar: cleanAll
+tar: cleanall
 	tar -zcf "barthblond_projet.tar.gz" *.c *.h *.tex makefile
 
 $(executable): $(objects) $(bibliotheque)

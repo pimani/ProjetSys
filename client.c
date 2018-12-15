@@ -9,6 +9,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <errno.h>
 
 #include "fifosm.h"
 #include "lanceur.h"
@@ -20,7 +21,7 @@ int main(void) {
   const info *descriptor = file_ouvre(NOM_FILE);
   if (descriptor == NULL) {
     perror("ouverture file");
-    exit(EXIT_FAILURE);
+    return EXIT_FAILURE;
   }
   char wtubename[MAX_NOM_SIZE];
   strcpy(wtubename, NOM_FIFOW);
@@ -46,18 +47,22 @@ int main(void) {
   strcpy(cmd.tube_in, wtubename);
   strcpy(cmd.tube_out, rtubename);
 
+  file_ajout((info *) descriptor, &cmd);
   printf("Envois du méssage et remplacement des entrée et sortie standards\n");
-  printf("Creation des tubes :\nCreation tube lecture\n");
+  printf("Creation des tubes :\nCreation tube écriture\n");
+
   if (mkfifo(wtubename, S_IRUSR | S_IWUSR) == -1) {
     perror("mkfifo wtube");
     exit(EXIT_FAILURE);
   }
-  printf("Creation tube écriture\n");
+
+  printf("Creation tube lecture\n");
   if (mkfifo(rtubename, S_IRUSR | S_IWUSR) == -1) {
     perror("mkfifo rtube");
     exit(EXIT_FAILURE);
   }
 
+  printf("ouverture tube ecriture\n");
   int fdw = open(wtubename, O_WRONLY);
   if (fdw == -1) {
     perror("open wtube");
@@ -69,9 +74,10 @@ int main(void) {
     perror("open rtube");
     exit(EXIT_FAILURE);
   }
-  dup2(0, fdw);
-  dup2(1, fdr);
-  file_ajout((info *) descriptor, &cmd);
+  printf("chgmt E/S");
+  dup2(STDIN_FILENO, fdw);
+  dup2(STDOUT_FILENO, fdr);
+  printf("fin");
 
   return EXIT_SUCCESS;
 }
