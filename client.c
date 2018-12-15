@@ -38,15 +38,17 @@ int main(void) {
       perror("fgets");
       exit(EXIT_FAILURE);
     }
+    if(cmd.argv[i][strlen(cmd.argv[i]) - 1] == '\n')
+        cmd.argv[i][strlen(cmd.argv[i]) - 1] = 0;
   }
   printf("Donner vos variables d'environements:");
   if (fgets(cmd.envp, sizeof(cmd.envp), stdin) == NULL) {
     perror("fgets");
     exit(EXIT_FAILURE);
   }
+  if(cmd.envp[strlen(cmd.envp) - 1] == '\n') cmd.envp[strlen(cmd.envp) - 1] = 0;
   strcpy(cmd.tube_in, wtubename);
   strcpy(cmd.tube_out, rtubename);
-
   file_ajout((info *) descriptor, &cmd);
   printf("Envois du méssage et remplacement des entrée et sortie standards\n");
   printf("Creation des tubes :\nCreation tube écriture\n");
