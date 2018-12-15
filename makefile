@@ -21,10 +21,10 @@ tar: cleanall
 	tar -zcf "barthblond_projet.tar.gz" *.c *.h *.tex makefile
 
 $(executable): $(objects) $(bibliotheque)
-	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
+	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
 $(executable2): $(objects2) $(bibliotheque)
-	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
+	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
 fifosm.o: fifosm.c fifosm.h
 	$(CC) -c -fPIC fifosm.c
