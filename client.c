@@ -16,8 +16,6 @@
 #include "client.h"
 
 int main(void) {
-  printf("Démarage du client : \n");
-  printf("Ouverture mémoire partager '%s'\n", NOM_FILE);
   const info *descriptor = file_ouvre(NOM_FILE);
   if (descriptor == NULL) {
     perror("ouverture file");
@@ -31,55 +29,63 @@ int main(void) {
   sprintf(rtubename + strlen(rtubename), "%d", getpid());
 
   argsc cmd;
-  printf("Donner vos argument, le premier étant la commande :\n");
   for (int i = 0; i < 3; ++i) {
     printf("Argument numéro %d : ", i);
     if (fgets(cmd.argv[i], sizeof(cmd.argv[i]), stdin) == NULL) {
       perror("fgets");
       exit(EXIT_FAILURE);
     }
-    if(cmd.argv[i][strlen(cmd.argv[i]) - 1] == '\n')
-        cmd.argv[i][strlen(cmd.argv[i]) - 1] = 0;
+    if(cmd.argv[i][strlen(cmd.argv[i]) - 1] == '\n') {
+      cmd.argv[i][strlen(cmd.argv[i]) - 1] = 0;
+    }
   }
   printf("Donner vos variables d'environements:");
   if (fgets(cmd.envp, sizeof(cmd.envp), stdin) == NULL) {
     perror("fgets");
     exit(EXIT_FAILURE);
   }
-  if(cmd.envp[strlen(cmd.envp) - 1] == '\n') cmd.envp[strlen(cmd.envp) - 1] = 0;
+  if(cmd.envp[strlen(cmd.envp) - 1] == '\n') {
+    cmd.envp[strlen(cmd.envp) - 1] = 0;
+  }
   strcpy(cmd.tube_in, wtubename);
   strcpy(cmd.tube_out, rtubename);
   file_ajout((info *) descriptor, &cmd);
-  printf("Envois du méssage et remplacement des entrée et sortie standards\n");
-  printf("Creation des tubes :\nCreation tube écriture\n");
 
   if (mkfifo(wtubename, S_IRUSR | S_IWUSR) == -1) {
     perror("mkfifo wtube");
     exit(EXIT_FAILURE);
   }
 
-  printf("Creation tube lecture\n");
   if (mkfifo(rtubename, S_IRUSR | S_IWUSR) == -1) {
     perror("mkfifo rtube");
     exit(EXIT_FAILURE);
   }
 
   printf("ouverture tube ecriture\n");
-  int fdw = open(wtubename, O_WRONLY);
-  if (fdw == -1) {
-    perror("open wtube");
-    exit(EXIT_FAILURE);
-  }
-
   int fdr = open(rtubename, O_RDONLY);
   if (fdr == -1) {
     perror("open rtube");
     exit(EXIT_FAILURE);
   }
+
+  /*
+  int fdw = open(wtubename, O_WRONLY);
+  if (fdw == -1) {
+    perror("open wtube");
+    exit(EXIT_FAILURE);
+  }
+  if (unlink(wtubename) == -1) {
+    perror("unlink");
+    exit(EXIT_FAILURE);
+  }*/
   printf("chgmt E/S");
-  dup2(STDIN_FILENO, fdw);
+  //dup2(fdw, STDIN_FILENO);
   dup2(STDOUT_FILENO, fdr);
-  printf("fin");
+  //close(fdw);
+  if (close(fdr) == -1) {
+    perror("close(fdr)");
+    exit(EXIT_FAILURE);
+  }
 
   return EXIT_SUCCESS;
 }

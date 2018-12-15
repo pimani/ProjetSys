@@ -11,7 +11,7 @@
 #define NOM_FILE "/shm_file_synchro10101000101"
 #define MAX_NOM_SIZE 32
 #define TUBE_LENGHT 32
-#define ARG_LENGHT 32
+#define ARG_LENGHT 64
 #define ARG_NUMBER 5
 #define ENVIRONEMENT_LENGHT 20
 
