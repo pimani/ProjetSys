@@ -16,6 +16,7 @@
 const info *descriptor;
 
 int main(void) {
+  printf("Serveur Start :\n");
   struct sigaction actionInt;
   actionInt.sa_handler = handlerStop;
   actionInt.sa_flags = 0;
@@ -34,24 +35,26 @@ int main(void) {
     exit(EXIT_FAILURE);
   }
 
-  //struct sigaction actionChild;
-  //actionChild.sa_handler = handlerFils;
-  //actionChild.sa_flags = 0;
-  //if (sigfillset(&actionChild.sa_mask) == -1) {
-  //  perror("sigfilltset");
-  //  exit(EXIT_FAILURE);
-  //}
-  //if (sigaction(SIGCHLD, &actionChild, NULL) == -1) {
-  //  perror("sigaction");
-  //  exit(EXIT_FAILURE);
-  //}
+  struct sigaction actionChild;
+  actionChild.sa_handler = handlerFils;
+  actionChild.sa_flags = SA_RESTART ;
+  if (sigfillset(&actionChild.sa_mask) == -1) {
+    perror("sigfilltset");
+    exit(EXIT_FAILURE);
+  }
+  if (sigaction(SIGCHLD, &actionChild, NULL) == -1) {
+    perror("sigaction");
+    exit(EXIT_FAILURE);
+  }
 
+  printf("Ouverture de la file '%s'\n", NOM_FILE);
   descriptor = file_vide(NOM_FILE, O_CREAT | O_RDWR | O_EXCL, S_IRWXU | S_IRWXG | S_IRWXO, sizeof(argsc));
   if (descriptor == NULL) {
     perror("création file");
     exit(EXIT_FAILURE);
   }
   argsc *temp;
+  printf("En attente de donnée\n");
   while ((temp = (argsc *)file_retirer(descriptor)) != NULL) {
     printf("\x1B[32mNouvelle donnée\x1B[0m\n");
     pthread_t th;
@@ -87,53 +90,49 @@ void * run(argsc *arg) {
   tempenv[0] = arg -> envp;
   tempenv[1] = NULL;
 
-  /*int fin;
-  if ((fin = open(arg -> tube_in, O_RDONLY)) == -1) {
-    perror("Ouverture tube in");
-    free(arg);
-    return NULL;
-  }*/
   int fout;
-  if ((fout = open(arg -> tube_out, O_WRONLY)) == -1) {
-    perror("Ouverture tube out");
-    free(arg);
-    return NULL;
-  }
+  int fin;
   switch (fork()) {
   case -1:
     perror("fork");
     return NULL;
   case 0:
-    if (dup2(fout, STDOUT_FILENO) == -1) {
-      perror("dup2");
+    if ((fin = open(arg -> tube_in, O_RDWR)) == -1) {
+      perror("Ouverture tube in");
       free(arg);
       return NULL;
-    }/*
+    }
     if (dup2(fin, STDOUT_FILENO) == -1) {
       perror("dup2");
       free(arg);
       return NULL;
-    }*/
+    }
+    if (close(fin) == -1) {
+      perror("close(fin)");
+      return NULL;
+    }
+    if ((fout = open(arg -> tube_out, O_RDWR)) == -1) {
+      perror("Ouverture tube out");
+      free(arg);
+      return NULL;
+    }
+    if (dup2(fout, STDIN_FILENO) == -1) {
+      perror("dup2");
+      free(arg);
+      return NULL;
+    }
+    if (close(fout) == -1) {
+      perror("close(fout)");
+      return NULL;
+    }
     // On exécute la commande
     execve(arg -> argv[0], temparg, tempenv);
     perror("execve");
     // execle na pas fonctioner on fermer le tube et libére la mémoire
     free(arg);
-    if (close(fout) == -1) {
-      perror("close(fout)");
-      return NULL;
-    }
+    close(fout);
     break;
   default:
-    wait(NULL);
-    /*if (close(fin) == -1) {
-      perror("close(fin)");
-      return NULL;
-    }
-    if (close(fout) == -1) {
-      perror("close(fout)");
-      return NULL;
-    }*/
     free(arg);
   }
   return NULL;
