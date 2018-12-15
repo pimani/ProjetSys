@@ -81,9 +81,9 @@ void * run(argsc *arg) {
   //  temparg[i] = arg -> argv[i];
   //}
   //temparg[ARG_NUMBER] = NULL;
-  char *tempenv[2];
-  tempenv[0] = arg -> envp;
-  tempenv[1] = NULL;
+  //char *tempenv[2];
+  //tempenv[0] = arg -> envp;
+  //tempenv[1] = NULL;
 
   int fin;
   if ((fin = open(arg -> tube_in, O_RDWR)) == -1) {
@@ -122,7 +122,7 @@ void * run(argsc *arg) {
     return NULL;
   case 0:
     // On exécute la commande
-    execle("/bin/ls", "/bin/ls", NULL, tempenv);
+    execle(arg -> argv[0], arg -> argv[1], arg -> argv[2], NULL, NULL);
     perror("execve");
     free(arg);
     close(fout);
