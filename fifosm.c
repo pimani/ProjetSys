@@ -56,7 +56,7 @@ struct info *file_vide(const char *name, int oflag, mode_t mode, size_t size) {
     perror("Ne peux pas obtenier la taille voulus\n");
     return NULL;
   }
-  char *temp = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED, f, 0);
+  char *temp = mmap(NULL, TAILLE_SHM, PROT_WRITE, MAP_SHARED, f, 0);
   if (temp == MAP_FAILED) {
     perror("mmap\n");
     exit(EXIT_FAILURE);
@@ -91,7 +91,7 @@ const struct info *file_ouvre(const char *name) {
     return NULL;
   }
 
-  if ((f = shm_open(name, O_WRONLY, S_IRWXU)) == -1) {
+  if ((f = shm_open(name, O_RDWR, S_IRWXU)) == -1) {
     perror("Ne peux pas ouvrir de la mémoire partager\n");
     return NULL;
   }
@@ -112,7 +112,8 @@ const void *file_ajout(const struct info *f, const void *ptr) {
     return NULL;
   }
   char *temp = (char *)ptr;
-  struct file *fi = mmap(NULL, TAILLE_SHM, PROT_READ | PROT_WRITE, MAP_SHARED,
+  perror("tante d'ajouter\n");
+  struct file *fi = mmap(NULL, TAILLE_SHM, PROT_WRITE, MAP_SHARED,
       f -> shared, 0);
   if (fi == MAP_FAILED) {
     perror("mmap\n");
@@ -122,6 +123,7 @@ const void *file_ajout(const struct info *f, const void *ptr) {
     perror("sem_wait\n");
     exit(EXIT_FAILURE);
   }
+  perror("passer le mutex\n");
   int test = 0;
   if (fi -> count == fi -> sharedNumber) {
     test = expend_shm(f -> shared);
