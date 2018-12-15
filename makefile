@@ -12,10 +12,10 @@ bibliotheque = libfifo.a
 all: $(executable) $(executable2)
 
 clean:
-	$(RM) *.o *.a
+	$(RM) *.o *.a *.pipe
 
 cleanall:
-	$(RM) *.o *.a $(executable) $(executable2)
+	$(RM) *.o *.a *.pipe $(executable) $(executable2)
 
 tar: cleanall
 	tar -zcf "barthblond_projet.tar.gz" *.c *.h *.tex makefile
