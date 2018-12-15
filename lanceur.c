@@ -56,7 +56,7 @@ int main(void) {
   argsc *temp;
   printf("En attente de donnée\n");
   while ((temp = (argsc *)file_retirer(descriptor)) != NULL) {
-    printf("Nouvelle donnée\n");
+    printf("\x1B[32mNouvelle donnée\x1B[0m\n");
     pthread_t th;
     if (pthread_create(&th, NULL,(void * (*)(void*))run, temp) != 0) {
       fprintf(stderr, "Erreur\n");
@@ -69,21 +69,26 @@ int main(void) {
 
 
 void * run(argsc *arg) {
-  printf("Nouveau thread :\n");
+  printf("\x1B[34mNouveau thread :\x1B[0m\n\n");
   if (arg == NULL) {
     fprintf(stderr, "Unexpected argument value\n");
     exit(EXIT_FAILURE);
   }
   printf("Commande a envoyer [%s]\n", arg -> argv[0]);
 
-  //char *temparg[ARG_NUMBER + 1];
-  //for (size_t i = 0; i < ARG_NUMBER; i += 1) {
-  //  temparg[i] = arg -> argv[i];
-  //}
-  //temparg[ARG_NUMBER] = NULL;
-  //char *tempenv[2];
-  //tempenv[0] = arg -> envp;
-  //tempenv[1] = NULL;
+  char *temparg[ARG_NUMBER + 1];
+  for (size_t i = 0; i < ARG_NUMBER; i += 1) {
+    if (arg -> argv[i][0] == '\0') {
+      temparg[i] = NULL;
+    }
+    else {
+      temparg[i] = arg -> argv[i];
+    }
+  }
+  temparg[ARG_NUMBER] = NULL;
+  char *tempenv[2];
+  tempenv[0] = arg -> envp;
+  tempenv[1] = NULL;
 
   int fout;
   int fin;
@@ -121,7 +126,7 @@ void * run(argsc *arg) {
       return NULL;
     }
     // On exécute la commande
-    execle("/bin/ls", "/bin/ls", NULL, NULL);
+    execve(arg -> argv[0], temparg, tempenv);
     perror("execve");
     // execle na pas fonctioner on fermer le tube et libére la mémoire
     free(arg);
