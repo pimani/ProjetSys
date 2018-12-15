@@ -48,7 +48,7 @@ int main(void) {
   }
 
   printf("Ouverture de la file '%s'\n", NOM_FILE);
-  descriptor = file_vide(NOM_FILE, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, sizeof(argsc));
+  descriptor = file_vide(NOM_FILE, O_CREAT | O_RDWR | O_EXCL, S_IRWXU | S_IRWXG | S_IRWXO, sizeof(argsc));
   if (descriptor == NULL) {
     perror("création file");
     exit(EXIT_FAILURE);
@@ -56,47 +56,12 @@ int main(void) {
   argsc *temp;
   printf("En attente de donnée\n");
   while ((temp = (argsc *)file_retirer(descriptor)) != NULL) {
-    printf("Nouvelle donnée");
-    int fin;
-    if ((fin = open(temp->tube_in, O_RDONLY)) == -1) {
-      perror("Ouverture tube in");
-      free(temp);
-      exit(EXIT_FAILURE);
-    }
-    if (dup2(fin, STDOUT_FILENO) == -1) {
-      perror("dup2");
-      free(temp);
-      exit(EXIT_FAILURE);
-    }
-
-    int fout;
-    if ((fout = open(temp->tube_out, O_WRONLY)) == -1) {
-      perror("Ouverture tube out");
-      free(temp);
-      exit(EXIT_FAILURE);
-    }
-    if (dup2(fout, STDIN_FILENO) == -1) {
-      perror("dup2");
-      free(temp);
-      exit(EXIT_FAILURE);
-    }
+    printf("Nouvelle donnée\n");
     pthread_t th;
     if (pthread_create(&th, NULL,(void * (*)(void*))run, temp) != 0) {
         fprintf(stderr, "Erreur\n");
-        file_vider(descriptor);
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
-    pthread_exit(NULL);
-
-    if (close(fin) == -1) {
-      perror("close(fin)");
-      exit(EXIT_FAILURE);
-    }
-    if (close(fout) == -1) {
-      perror("close(fout)");
-      exit(EXIT_FAILURE);
-    }
-    free(temp);
   }
   file_vider(descriptor);
   return EXIT_SUCCESS;
@@ -104,32 +69,67 @@ int main(void) {
 
 
 void * run(argsc *arg) {
-  printf("Nouveau thread");
+  printf("Nouveau thread :\n");
   if (arg == NULL) {
     fprintf(stderr, "Unexpected argument value\n");
     exit(EXIT_FAILURE);
   }
-  char *temparg[ARG_NUMBER + 1];
-  for (size_t i = 0; i < ARG_NUMBER; i += 1) {
-    temparg[i] = arg -> argv[i];
-  }
-  temparg[ARG_NUMBER] = NULL;
+  printf("Commande a envoyer [%s]\n", arg -> argv[0]);
+
+  //char *temparg[ARG_NUMBER + 1];
+  //for (size_t i = 0; i < ARG_NUMBER; i += 1) {
+  //  temparg[i] = arg -> argv[i];
+  //}
+  //temparg[ARG_NUMBER] = NULL;
   char *tempenv[2];
   tempenv[0] = arg -> envp;
   tempenv[1] = NULL;
 
+  int fin;
+  if ((fin = open(arg -> tube_in, O_RDWR)) == -1) {
+    perror("Ouverture tube in");
+    free(arg);
+    return NULL;
+  }
+  if (dup2(fin, STDOUT_FILENO) == -1) {
+    perror("dup2");
+    free(arg);
+    return NULL;
+  }
+  if (close(fin) == -1) {
+    perror("close(fin)");
+    return NULL;
+  }
+
+  int fout;
+  if ((fout = open(arg -> tube_out, O_RDWR)) == -1) {
+    perror("Ouverture tube out");
+    free(arg);
+    return NULL;
+  }
+  if (dup2(fout, STDIN_FILENO) == -1) {
+    perror("dup2");
+    free(arg);
+    return NULL;
+  }
+  if (close(fout) == -1) {
+    perror("close(fout)");
+    return NULL;
+  }
   switch (fork()) {
   case -1:
     perror("fork");
-    exit(EXIT_FAILURE);
+    return NULL;
   case 0:
+    // On exécute la commande
+    execle("/bin/ls", "/bin/ls", NULL, tempenv);
+    perror("execve");
+    free(arg);
+    close(fout);
+    // fermer le tube en cas d'erreur
     break;
   default:
-    // On exécute la commande
-    execvpe(arg -> argv[0], temparg, tempenv);
-    file_vider(descriptor);
-    perror("execve");
-    // fermer le tube en cas d'erreur
+    free(arg);
   }
   return NULL;
 }
