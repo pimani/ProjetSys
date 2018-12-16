@@ -79,19 +79,27 @@ int main(void) {
     exit(EXIT_FAILURE);
   }
 
-  int c;
-  while (active && (c = getchar()) != EOF) {
+  ssize_t n;
+  char c;
+  while ((active && (n = read(fdr, &c, sizeof(c))) > 0)) {
     printf("%c", c);
   }
   if (!active) {
     exit(EXIT_FAILURE);
   }
-  active = false;
-
+  if (close(fdr) == -1) {
+    perror("close(fdr)");
+    exit(EXIT_FAILURE);
+  }
+  if (unlink(rtubename) == -1) {
+    perror("unlink");
+    exit(EXIT_FAILURE);
+  }
   if (unlink(wtubename) == -1) {
     perror("unlink");
     exit(EXIT_FAILURE);
   }
+  active = false;
   return EXIT_SUCCESS;
 }
 
@@ -105,6 +113,17 @@ void *input(char *wtubename) {
   int n;
   while(active) {
     n = scanf("%c", &temp);
+    if (n == EOF) {
+      if (close(fdw) == -1) {
+        perror("close(fdr)");
+        exit(EXIT_FAILURE);
+      }
+      if (unlink(wtubename) == -1) {
+        perror("unlink");
+        exit(EXIT_FAILURE);
+      }
+      return NULL;
+    }
     if (n < 1) {
       return NULL;
     }
@@ -113,6 +132,10 @@ void *input(char *wtubename) {
       active = false;
       return NULL;
     }
+  }
+  if (close(fdw) == -1) {
+    perror("close(fdr)");
+    exit(EXIT_FAILURE);
   }
   return NULL;
 }

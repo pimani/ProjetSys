@@ -29,25 +29,26 @@
     La structure stocke le nom de l'espace de mémoire partagé et ses droits.
     la liste des fonctions implémenter :
     \begin{description}
-        \item [file *file\_vide(void)] Créer une structure correspondant à une file vide avec des éléments de taille
+        \item [file\_vide(void)] Créer une structure correspondant à une file vide avec des éléments de taille
         fixe de taille size.\\
         Renvois NULL en cas de dépassement de capacité mémoire ou si size <= 0\\
         sinon renvois l'addresse d'un descripteur permétant d'y accéder.
 
-        \item [const struct info *file\_ouvre(const char *name, int oflag, mode\_t mod)] Ouvre un espace mémoire éxistant et renvois une structure affin d'y accéder avec les autres fonctions de la librairie.\\
+        \item [file\_ouvre(const char *name, int oflag, mode\_t mod)] Ouvre un espace mémoire éxistant et renvois une structure affin d'y accéder avec les autres fonctions de la librairie.\\
         Renvois NULL en cas d'érreur.
 
-        \item [const void *file\_ajout(file *f, const void *ptr, size\_t msize, size\_t ns)]  Ajoute l'éléments pointer par ptr à la fin de la file décrit pas f.\\
-        Si la file est pleine, tante de doubler la taille de la liste, en cas d'échec
+        \item [file\_ajout(const info *f, const void *ptr)].
+        Ajoute l'éléments pointer par ptr à la fin de la file décrit pas f.\\
+        Si la file est pleine, tante de doubler la taille de la liste, en cas d'échec\\
         devient bloquant en attendant que la file se vide.\\
         Renvois NULL si ptr == null ou en cas de dépassement de capacité mémoire, sinon renvois ptr.
 
-        \item [const void *file\_retirer(file *f)] Défile la file s, renvois nulle si la file et vide sinon renvois l'address d'une copie de l'élément qui était au début de la file, la libération de la mémoire lier à cette éléments est laisser à la discrétion de l'utisateur.\\
+        \item [file\_retirer(info *f)] Défile la file s, renvois nulle si la file et vide sinon renvois l'address d'une copie de l'élément qui était au début de la file, la libération de la mémoire lier à cette éléments est laisser à la discrétion de l'utisateur.\\
         L'opération est bloquante tant en attendant de pouvoir dépiler un élément.
 
-        \item [bool file\_est\_vide(const file *f)] Renvois vrais ou faux si la file s est vide.
+        \item [file\_est\_vide(const info *f)] Renvois vrais ou faux si la file s est vide.
 
-        \item [int file\_vider(info *f)] libérer l'espace de mémoire partager et détruit les sémaphore, renvois -1 en cas d'érreur
+        \item [file\_vider(info *f)] libérer l'espace de mémoire partager et détruit les sémaphore, renvois -1 en cas d'érreur
     \end{description}
     La file est implémenter avec une liste flexible dans un espace mémoire partager, la liste peux voir sa taille doubler en cas de besoin pour permetre un plus grand nombre d'éléments. \\
     Le créateur de la file doit définir une taille au éléments étant mis dans la file.\\
@@ -60,14 +61,14 @@
     \begin{description}
         \item [argv] Liste des arguments de la commande, inclus la commande elle même
         \item [envp] Arguments d'environement de la commande.
-        \item [tube\in] Nom du tube à relier à l'entrée standard de la commande.
+        \item [tube\_in] Nom du tube à relier à l'entrée standard de la commande.
         \item [tube\_out] Nom du tube à relier à la sortie standard de la commande.
     \end{description}
     Les tubes ressus ouvert dans l'ordre :
-    \begin{enumerate}
-        \item tube_in  : entrée standard permétant au client d'envoyer plus d'information à la commande.
-        \item tube_out : sortie standard permétant au client de recevoir les méssages de la commande.
-    \end{enumerate}
+    \begin{description}
+        \item [tube\_in]  : entrée standard permétant au client d'envoyer plus d'information à la commande.
+        \item [tube\_out] : sortie standard permétant au client de recevoir les méssages de la commande.
+    \end{description}
     L'ouverture des tubes est à la discrétion du client.\\
     Dans le cas d'une commande transmise invalide, le serveur coupe le tube de retour sans rien écrire dedans.
     Le serveur ne se stope que dans le cas d'une érreur ou d'un signal d'arrét par l'utilisateur.
