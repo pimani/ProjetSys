@@ -106,18 +106,14 @@ void *input(char *wtubename) {
     perror("open wtube");
     exit(EXIT_FAILURE);
   }
-  char *temp = malloc(32);
-  if (temp == NULL) {
-    active = false;
-    return NULL;
-  }
+  char temp;
   int n;
   while(active) {
-    n = scanf("%32s", temp);
+    n = scanf("%c", &temp);
     if (n < 1) {
       return NULL;
     }
-    if (write(fdw, temp, (size_t)n + 1) == -1) {
+    if (write(fdw, &temp, (size_t)n + 1) == -1) {
       perror("write");
       active = false;
       return NULL;
