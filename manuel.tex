@@ -3,8 +3,8 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 
-\title{Manuel d'utilisation du lanceur d'application}
-\author{Pierre Barthélemy, Mathieu Blondel}
+\title{Manuel d'utilisation du lanceur de commandes}
+\author{Pierre Barthélemy & Mathieu Blondel}
 \date{\today}
 
 \begin{document}
@@ -13,32 +13,31 @@
 \tableofcontents
 \newpage
 \section{Introduction}
-    Réalisation d'un lanceur de commande en ligne de commande, le projet permet de lancer des commandes à partir de plusieurs client en définissant des pipes comme entrée et sortie standard à ses commande. Les commandes sont éxécuter par un serveur unique.
-    Le programme est déveloper en 2 sous programme, un serveur et un client.
-\section*{serveur}
-    Le serveur c'est lui qui récupéra les demandes, les traiteras et fera le lien entre le programme et le client, il doit être lancer en premeir.
-\section*{client}
-    Le client c'est de lui dont viendra les demandes de l'utilisateur et avec le qu'elle il va intéragir, il doit être lancer après le serveur sinon ne pourra rien faire et renvéra une érreur.
+    Réalisation d'un lanceur de commandes en ligne de commande, le projet permet de lancer des commandes à partir d'un ou plusieurs clients en définissant des noms de tubes comme entrée et sortie standards de ses commandes. Les commandes sont éxécutée par un serveur unique.
+    Le programme est développé en 2 sous-programmes, un serveur et un client.
+\section*{Serveur}
+    C'est le serveur qui récupère les demandes, les traite et fait le lien entre le programme et le client, il doit être lancé en premier.
+\section*{Client}
+    Le client envoie les demandes de l'utilisateur au serveur et il interagit avec, il doit être lancé après le serveur sinon il ne pourra rien faire et enverra une erreur.
 \newpage
 
 \section{Serveur}
-    L'utilisateur na rien à faire durant l'éxécution du serveur, il n'intervient que en début et en fin de tache.
-    Pour le lancer l'utilisateur na cas éxécuter l'éxécutable, pour l'arréter envoyer un signal ou une intéruption clavier.
-    Le serveur dois toujours être lancer en premier car il s'agit de lui qui créer l'espace de comunications entre procéssus.
-    Si il le souhaite l'utilisateur peux rediriger la sortie standard du programme afin d'avoir les logs d'écris dans un fichier.
+    L'utilisateur n'a rien à faire durant l'exécution du serveur, il n'intervient qu'en début et en fin de tâche.
+    Pour l'exécuter, l'utilisateur n'a qu'à lancer l'éxécutable, pour l'arréter, envoyer un signal ou une interruption clavier.
+    Le serveur doit toujours être lancé en premier car il s'agit de lui qui crée l'espace de communication entre les processus.
+    Si il le souhaite, l'utilisateur pourrait rediriger la sortie standard du programme afin d'avoir les logs d'écris dans un fichier.
 \newpage
 
 \section{Client}
-    Le client peux être éxécuter à n'importe le qu'elle moment de la vie du serveur.
-    Sont utilisation de passe par un similie d'interface dans le terminal via des entrée clavier:
+    Le client peut être exécuté à n'importe quel moment de la vie du serveur.
+    Son utilisation se fait dans le terminal via des entrées clavier :
       \begin{enumerate}
-        \item Lancerment du logiciel
-        \item Donne le premier argument de la commande qui est la commande en elle même.
-        \item Donne jusqu'à x autre aguments x étant définis à la compilation.
-        \item Donne si il le souhaite des variables d'environements.
+        \item Lancement du logiciel
+        \item Donne le premier argument de la commande qui est la commande elle-même.
+        \item Donne jusqu'à x autre aguments, x étant un entier positif non nul défini à la compilation.
+        \item Donne si il le souhaite des variables d'environnements.
       \end{enumerate}
-    A la suite de sa la demande est envoyer et quand elle sera traiter l'utilisateur aura la main\\
-    sur l'entrée et la sortie standard de sa commande, s'il veux métre fin à l'envois de donnée il peux envoyer
-    un signal de fin de fichier avec ctrl+d.
+    À la suite de cela, la demande est envoyée. Quand elle sera traitée, l'utilisateur aura la main
+    sur l'entrée et la sortie standards de sa commandes. Si il veux mettre fin à l'envoi de données, il peut à tout moment envoyer un signal de fin de fichier avec ctrl+d.
 
 \end{document}
