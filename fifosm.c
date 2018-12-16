@@ -10,8 +10,8 @@
 
 
 
-#define SHM_ACTIVE "shm_active648646"
-#define SHM_NB "shm_nb674272985365427"
+#define SHM_ACTIVE "/shm_active648646"
+#define SHM_NB "/shm_nb674272985365427"
 #define TAILLE_SHM sizeof(sem_t)
 #define DEFAULT_NUMBER 10
 

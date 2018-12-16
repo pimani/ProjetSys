@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define NOM_FILE "shm_file_synchro10101000101"
+#define NOM_FILE "/shm_file_synchro10101000101"
 #define MAX_NOM_SIZE 32
 #define TUBE_LENGHT 32
 #define ARG_LENGHT 64

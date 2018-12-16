@@ -25,9 +25,11 @@ int main(void) {
   char wtubename[MAX_NOM_SIZE];
   strcpy(wtubename, NOM_FIFOW);
   sprintf(wtubename + strlen(wtubename), "%d", getpid());
+  strcat(wtubename, ".pipe");
   char rtubename[MAX_NOM_SIZE];
   strcpy(rtubename, NOM_FIFOR);
   sprintf(rtubename + strlen(rtubename), "%d", getpid());
+  strcat(rtubename, ".pipe");
 
   argsc cmd;
   for (int i = 0; i < ARG_NUMBER; ++i) {
