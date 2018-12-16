@@ -92,11 +92,15 @@ int main(void) {
     exit(EXIT_FAILURE);
   }
   if (unlink(rtubename) == -1) {
+    if (unlink(wtubename) != -1) {
+      perror("Mauvaise commande\n");
+      exit(EXIT_FAILURE);
+    }
     perror("unlink");
     exit(EXIT_FAILURE);
   }
   if (unlink(wtubename) == -1) {
-    perror("unlink");
+    perror("unlink rtube");
     exit(EXIT_FAILURE);
   }
   active = false;
