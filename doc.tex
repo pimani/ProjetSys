@@ -4,8 +4,8 @@
 \usepackage[T1]{fontenc}
 
 
-\title{Projet Systéme d'exploitation}
-\author{Pierre Barthélemy, Mathieu Blondel}
+\title{Projet : Système d'Exploitation}
+\author{Pierre Barthélemy & Mathieu Blondel}
 \date{\today}
 
 \begin{document}
@@ -14,75 +14,75 @@
 \tableofcontents
 \newpage
 \section{Introduction}
-    Réalisation d'un lanceur de commande en ligne de commande, le projet permétera de lancer des commandes à partir de plusieurs client en déffinissant des pipes comme entrée et sortie standard à ses commande. Les commandes sont éxécuter par un unique serveur.
-    Le programme est déveloper en 3 partie, une file synchonisée, un serveur et un client.
-\section*{file synchronisée}
-    La liste d'attente synchronisée est réaliser à partie d'un espace de mémoire partagé, de deux sémaphore permétant l'accès à plusieurs processus, il ressoit les demandes des clients, se fait lire et vider par le serveur.
-\section*{serveur}
-    Le serveur va en récupérant la demande venant d'un client via la file synchonisée, éxécuter la commande voulus dans un nouveau procéssus avec les pipes fournis comme entrée et sortie standard.
-\section*{client}
-    Le client créer deux pipes pour l'entrée et la sortie standard, ajoute sa demande à la file d'attente, écoute et envois ses donnée sur les pipes.
+    Réalisation d'un lanceur de commande en ligne de commande, le projet permettra de lancer des commandes à partir de plusieurs clients en définissant des tubes comme entrée et sortie standards de ses commandes. Les commandes sont éxécutées par un serveur unique.
+    Le programme est développé en 3 parties, une file synchronisée, un serveur et le ou les client(s).
+\section*{File synchronisée}
+    La liste d'attente synchronisée est réalisée à partir d'un espace de mémoire partagée, de deux sémaphores permettant l'accès à plusieurs processus, il reçoit les demandes des clients, se fait lire et vider par le serveur.
+\section*{Serveur}
+    Le serveur va, en récupérant la demande venant d'un client via la file synchonisée, exécuter la commande voulue dans un nouveau processus avec les noms des tubes fournis comme entrée et sortie standards.
+\section*{Client}
+    Le client crée deux tubes pour l'entrée et la sortie standards, ajoute sa demande à la file d'attente, écoute et envoie ses données dans chacun des tubes respectifs.
 
 \newpage
 \section{File synchronisée}
-    La file synchonisée utilise une structure de donnée pour permetre l'accée à ses fonctions:\\
-    La structure stocke le nom de l'espace de mémoire partagé et un descripteur de fichier.
-    la liste des fonctions implémenter :
+    La file synchonisée utilise une structure de données pour permettre l'accès à ses fonctions.
+    La structure stocke le nom de l'espace de mémoire partagée et un descripteur de fichier.\\
+    Liste des fonctions implémentées :
     \begin{description}
-        \item [file\_vide(void)] Créer une structure correspondant à une file vide avec des éléments de taille
-        fixe de taille size.\\
-        Renvois NULL en cas de dépassement de capacité mémoire ou si size <= 0\\
-        sinon renvois l'addresse d'un descripteur permétant d'y accéder.
+        \item [file\_vide(void)] : Crée une structure correspondant à une file vide avec des éléments
+        fixés chacun à une taille size.\\
+        Renvoie NULL en cas de dépassement de capacité mémoire ou si size <= 0,\\
+        sinon elle renvoie l'addresse d'un descripteur permettant d'y accéder.
 
-        \item [file\_ouvre(const char *name, int oflag, mode\_t mod)] Ouvre un espace mémoire éxistant et renvois un descripteur affin d'y accéder avec les autres fonctions de la librairie.\\
-        Renvois NULL en cas d'érreur.
+        \item [file\_ouvre(const char *name, int oflag, mode\_t mod)] : Ouvre un espace mémoire existant et renvoie un descripteur afin d'y accéder avec les autres fonctions de la librairie.\\
+        Renvoie NULL en cas d'erreur.
 
-        \item [file\_ajout(const info *f, const void *ptr)].
-        Ajoute l'éléments pointer par ptr à la fin de la file décrit pas f.\\
-        Si la file est pleine, tante de doubler la taille de la liste, en cas d'échec\\
-        devient bloquant en attendant que la file se vide.\\
-        Renvois NULL si ptr == null ou en cas de dépassement de capacité mémoire, sinon renvois ptr.
+        \item [file\_ajout(const info *f, const void *ptr)] :
+        Ajoute l'élément pointé par ptr à la fin de la file décrite par f.\\
+        Si la file est pleine, tente de doubler la taille de la liste,\\
+        en cas d'échec, devient bloquant en attendant que la file se vide.\\
+        Renvoie NULL si ptr == null ou en cas de dépassement de capacité mémoire, sinon renvoie ptr.
 
-        \item [file\_retirer(info *f)] Défile la file s, renvois nulle si la file et vide sinon renvois l'address d'une copie de l'élément qui était au début de la file, la libération de la mémoire lier à cette éléments est laisser à la discrétion de l'utisateur.\\
-        L'opération est bloquante tant en attendant de pouvoir dépiler un élément.
+        \item [file\_retirer(info *f)] : Défile la file s, renvoie null si la file est vide, sinon renvoie l'addresse d'une copie de l'élément qui était au début de la file, la libération de la mémoire liée à cet élément est laissée à la discrétion de l'utisateur.\\
+        L'opération est bloquante en attendant de pouvoir dépiler un élément.
 
-        \item [file\_est\_vide(const info *f)] Renvois vrais ou faux si la file s est vide.
+        \item [file\_est\_vide(const info *f)] : Renvoie vrai si la file s est vide, sinon faux.
 
-        \item [file\_vider(info *f)] libérer l'espace de mémoire partager et détruit les sémaphore, renvois -1 en cas d'érreur
+        \item [file\_vider(info *f)] : Libère l'espace de mémoire partagée et détruit les sémaphores, renvoie -1 en cas d'erreur.
     \end{description}
-    La file est implémenter avec une liste flexible dans un espace mémoire partager, la liste peux voir sa taille doubler en cas de besoin pour permetre un plus grand nombre d'éléments. \\
-    Le créateur de la file doit définir une taille au éléments étant mis dans la file.\\
-    Pour permetre l'accée à plusieurs client, un algorithme producteur consomateur est implémenter avec 3 sémaphore stocker dans l'espace de mémoire partager.
+    La file est implémentée avec une liste flexible dans un espace de mémoire partagéé, la liste peut voir sa taille doubler en cas de besoin pour permettre de stocker un plus grand nombre d'éléments. \\
+    Le créateur de la file doit définir une taille aux éléments qui seront mis dans la file.\\
+    Pour permettre l'accès à plusieurs clients, un algorithme producteur-consomateurs est implémenté avec trois sémaphores stockés dans l'espace de mémoire partagée.
 
 \newpage
 \section{Serveur}
-    Le serveur lis la file synchonisée pour avoir les différentes commandes à éxécuter, quand une commande est ressus il créer un nouveau thread qui aura pour tache de s'en occuper.\\
-    Les demandes sont transmise à traver un structure regroupant diverses informations :
+    Le serveur lit dans la file synchonisée pour récupérer les différentes commandes à exécuter, quand une commande est reçue, il crée un nouveau thread qui aura pour tâche de s'en occuper.\\
+    Les demandes sont transmises à travers une structure regroupant diverses informations :
     \begin{description}
-        \item [argv] Liste des arguments de la commande, inclus la commande elle même
-        \item [envp] Arguments d'environement de la commande.
-        \item [tube\_in] Nom du tube à relier à l'entrée standard de la commande.
-        \item [tube\_out] Nom du tube à relier à la sortie standard de la commande.
+        \item [argv] La liste des arguments de la commande, qui inclue la commande elle-même.
+        \item [envp] Les variables d'environnement de la commande.
+        \item [tube\_in] Le nom du tube à relier à l'entrée standard de la commande.
+        \item [tube\_out] Le nom du tube à relier à la sortie standard de la commande.
     \end{description}
-    La structure est modulable, la taille ainsi que le nombre d'arguments peuvent être changer via des constante écris dans le fichier lanceur.c
-    Les tubes utiliser pour la commande sont ressus dans l'ordre :
+    La structure est modulable, la taille ainsi que le nombre d'arguments peuvent être changer via des macros-constantes écrites dans le fichier lanceur.h.\\
+    Les tubes utilisés pour la commande sont reçus dans l'ordre suivant :
     \begin{description}
-        \item [tube\_in]  : entrée standard permétant au client d'envoyer plus d'information à la commande.
-        \item [tube\_out] : sortie standard permétant au client de recevoir les méssages de la commande.
+        \item [tube\_in]  : entrée standard permettant au client d'envoyer plus d'informations à la commande.
+        \item [tube\_out] : sortie standard permettant au client de recevoir les messages de la commande.
     \end{description}
     La création des tubes est à la discrétion du client.\\
     Dans le cas d'une commande transmise invalide, le serveur coupe le tube de retour sans rien écrire dedans.
-    Le serveur ne se stope que dans le cas d'une érreur ou d'un signal d'arrét par l'utilisateur.
-    Le serveur redéfinis le comportement des certains signaux.
+    Le serveur ne s'arrête que dans le cas d'une erreur ou d'un signal d'arrêt par l'utilisateur.
+    Le serveur redéfinit le comportement de certains signaux.
     \begin{description}
-      \item [SIGINT] Libére la mémoire partager avant de stoper le programme.
-      \item [SIGCHLD] Wait l'enfant afin de gérer les zombies.
-      \item [SIGCHLD] Libére la mémoire partager avant de stoper le programme.
+      \item [SIGINT] Libère la mémoire partagée avant d'arrêter le programme.
+      \item [SIGCHLD] Attend l'enfant afin de pouvoir gérer les zombies.
+      \item [SIGCHUP] Libère la mémoire partagée avant d'arrêter le programme.
     \end{description}
 \newpage
 \section{Client}
-    Le client est le programme qui gére l'intéraction avec l'utilisateur, cela signifie qu'il passe par des entrées claviers.
-    Le choix à était fais de prendre les demandes après l'éxécution via une similie d'interface graphique.
-    Afin de pouvoir communiquer des pipes de communiquation à la commande demander par l'utilisateur le logiciel créer deux pipes à partir d'un nom type et de son identifiant afin de tanter d'obtenir des nouvelles pipes pas encore créer.
-    La gestion de l'affichages se fais par un boucle lisant en permanence la pipe correspondante pendant que les entrées utilisateur son gérer par un deuxiéme thread avec des scanf.
+    Le client est le programme qui gére l'interaction avec l'utilisateur, cela signifie qu'il passe par des entrées claviers.
+    Le choix a été fait de prendre les demandes après l'éxécution via le terminal.
+    Afin de pouvoir communiquer entre la commande demandée par l'utilisateur au serveur et le client, le logiciel crée deux tubes à partir d'un nom type et de son identifiant.
+    La gestion de l'affichage se fait par une boucle lisant en permanence le tube correspondant pendant que les entrées de l'utilisateur sont gérées par un deuxiéme thread qui récupère les requêtes du client envoyées par l'autre tube au serveur.
 \end{document}
