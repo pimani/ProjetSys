@@ -102,7 +102,7 @@ void * run(argsc *arg) {
       free(arg);
       return NULL;
     }
-    if (dup2(fin, STDOUT_FILENO) == -1) {
+    if (dup2(fin, STDIN_FILENO) == -1) {
       perror("dup2");
       free(arg);
       return NULL;
@@ -116,7 +116,7 @@ void * run(argsc *arg) {
       free(arg);
       return NULL;
     }
-    if (dup2(fout, STDIN_FILENO) == -1) {
+    if (dup2(fout, STDOUT_FILENO) == -1) {
       perror("dup2");
       free(arg);
       return NULL;

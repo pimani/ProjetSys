@@ -21,17 +21,16 @@ int main(void) {
     perror("ouverture file");
     return EXIT_FAILURE;
   }
+
   char wtubename[MAX_NOM_SIZE];
   strcpy(wtubename, NOM_FIFOW);
   sprintf(wtubename + strlen(wtubename), "%d", getpid());
-  strcat(wtubename, ".pipe");
   char rtubename[MAX_NOM_SIZE];
   strcpy(rtubename, NOM_FIFOR);
   sprintf(rtubename + strlen(rtubename), "%d", getpid());
-  strcat(rtubename, ".pipe");
 
   argsc cmd;
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 0; i < ARG_NUMBER; ++i) {
     printf("Argument numéro %d : ", i);
     if (fgets(cmd.argv[i], sizeof(cmd.argv[i]), stdin) == NULL) {
       perror("fgets");
@@ -51,43 +50,48 @@ int main(void) {
   }
   strcpy(cmd.tube_in, wtubename);
   strcpy(cmd.tube_out, rtubename);
-  file_ajout((info *) descriptor, &cmd);
 
   if (mkfifo(wtubename, S_IRUSR | S_IWUSR) == -1) {
     perror("mkfifo wtube");
     exit(EXIT_FAILURE);
   }
-
   if (mkfifo(rtubename, S_IRUSR | S_IWUSR) == -1) {
     perror("mkfifo rtube");
     exit(EXIT_FAILURE);
   }
 
-  printf("ouverture tube ecriture\n");
+  file_ajout((info *) descriptor, &cmd);
+
   int fdr = open(rtubename, O_RDONLY);
   if (fdr == -1) {
     perror("open rtube");
     exit(EXIT_FAILURE);
   }
 
-  /*
   int fdw = open(wtubename, O_WRONLY);
   if (fdw == -1) {
     perror("open wtube");
     exit(EXIT_FAILURE);
   }
-  if (unlink(wtubename) == -1) {
-    perror("unlink");
+  dup2(fdw, STDIN_FILENO);
+
+  ssize_t n;
+  char c;
+  while ((n = read(fdr, &c, sizeof(c))) > 0) {
+    printf("%c", c);
+  }
+  if (n == -1) {
+    perror("read");
     exit(EXIT_FAILURE);
-  }*/
-  printf("chgmt E/S");
-  //dup2(fdw, STDIN_FILENO);
-  dup2(STDOUT_FILENO, fdr);
-  //close(fdw);
+  }
+
   if (close(fdr) == -1) {
     perror("close(fdr)");
     exit(EXIT_FAILURE);
   }
-
+  if (unlink(wtubename) == -1) {
+    perror("unlink");
+    exit(EXIT_FAILURE);
+  }
   return EXIT_SUCCESS;
 }

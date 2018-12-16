@@ -12,19 +12,19 @@ bibliotheque = libfifo.a
 all: $(executable) $(executable2)
 
 clean:
-	$(RM) *.o *.a *.pipe
+	$(RM) *.o *.a
 
 cleanall:
-	$(RM) *.o *.a *.pipe $(executable) $(executable2)
+	$(RM) *.o *.a $(executable) $(executable2)
 
 tar: cleanall
 	tar -zcf "barthblond_projet.tar.gz" *.c *.h *.tex makefile
 
 $(executable): $(objects) $(bibliotheque)
-	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@ $(ldlibds)
 
 $(executable2): $(objects2) $(bibliotheque)
-	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@ $(ldlibds)
 
 fifosm.o: fifosm.c fifosm.h
 	$(CC) -c -fPIC fifosm.c

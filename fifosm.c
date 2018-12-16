@@ -118,10 +118,12 @@ const void *file_ajout(const struct info *f, const void *ptr) {
     perror("mmap\n");
     exit(EXIT_FAILURE);
   }
+
   if (sem_wait(&fi->mutex) == -1) {
     perror("sem_wait\n");
     exit(EXIT_FAILURE);
   }
+
   int test = 0;
   if (fi -> count == fi -> sharedNumber) {
     test = expend_shm(f -> shared);
@@ -144,11 +146,11 @@ const void *file_ajout(const struct info *f, const void *ptr) {
   fi -> head = (fi -> head + fi -> elementSize) % (fi -> sharedNumber * fi -> elementSize);
   fi -> count += 1;
 
-  if (sem_post(&fi->mutex) == -1) {
+  if (sem_post(&fi->full) == -1) {
     perror("sem_post\n");
     exit(EXIT_FAILURE);
   }
-  if (sem_post(&fi->full) == -1) {
+  if (sem_post(&fi->mutex) == -1) {
     perror("sem_post\n");
     exit(EXIT_FAILURE);
   }
@@ -162,6 +164,7 @@ const void *file_retirer(struct info *f) {
     perror("mmap\n");
     exit(EXIT_FAILURE);
   }
+
   if (sem_wait(&fi -> full) == -1) {
     perror("sem_wait\n");
     exit(EXIT_FAILURE);
@@ -170,6 +173,7 @@ const void *file_retirer(struct info *f) {
     perror("sem_wait\n");
     exit(EXIT_FAILURE);
   }
+
   char *value = malloc(fi -> elementSize);
   if (value == NULL) {
     return NULL;
@@ -178,15 +182,15 @@ const void *file_retirer(struct info *f) {
   memcpy(value, &(fi -> array[fi -> tail]), fi -> elementSize);
   fi -> tail = (fi -> tail + fi -> elementSize) % (fi -> sharedNumber * fi -> elementSize);
   fi -> count -= 1;
-  if (sem_post(&fi -> mutex) == -1) {
-    perror("sem_post\n");
-    exit(EXIT_FAILURE);
-  }
+
   if (sem_post(&fi -> free) == -1) {
     perror("sem_post\n");
     exit(EXIT_FAILURE);
   }
-
+  if (sem_post(&fi -> mutex) == -1) {
+    perror("sem_post\n");
+    exit(EXIT_FAILURE);
+  }
   return value;
 }
 
