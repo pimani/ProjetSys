@@ -79,19 +79,14 @@ int main(void) {
     exit(EXIT_FAILURE);
   }
 
-  ssize_t n;
-  char c;
-  while ((active && (n = read(fdr, &c, sizeof(c))) > 0)) {
+  int c;
+  while (active && (c = getchar()) != EOF) {
     printf("%c", c);
   }
   if (!active) {
     exit(EXIT_FAILURE);
   }
   active = false;
-  if (n == -1) {
-    perror("read");
-    exit(EXIT_FAILURE);
-  }
 
   if (unlink(wtubename) == -1) {
     perror("unlink");
