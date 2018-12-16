@@ -15,6 +15,8 @@
 #include "lanceur.h"
 #include "client.h"
 
+bool active = true;
+
 int main(void) {
   const info *descriptor = file_ouvre(NOM_FILE);
   if (descriptor == NULL) {
@@ -64,36 +66,62 @@ int main(void) {
 
   file_ajout((info *) descriptor, &cmd);
 
+  pthread_t th;
+  if (pthread_create(&th, NULL,(void * (*)(void*))input, wtubename) != 0) {
+    fprintf(stderr, "Erreur\n");
+    file_vider(descriptor);
+    exit(EXIT_FAILURE);
+  }
+
   int fdr = open(rtubename, O_RDONLY);
   if (fdr == -1) {
     perror("open rtube");
     exit(EXIT_FAILURE);
   }
 
-  int fdw = open(wtubename, O_WRONLY);
-  if (fdw == -1) {
-    perror("open wtube");
-    exit(EXIT_FAILURE);
-  }
-  dup2(fdw, STDIN_FILENO);
-
   ssize_t n;
   char c;
-  while ((n = read(fdr, &c, sizeof(c))) > 0) {
+  while ((active && (n = read(fdr, &c, sizeof(c))) > 0)) {
     printf("%c", c);
   }
+  if (!active) {
+    exit(EXIT_FAILURE);
+  }
+  active = false;
   if (n == -1) {
     perror("read");
     exit(EXIT_FAILURE);
   }
 
-  if (close(fdr) == -1) {
-    perror("close(fdr)");
-    exit(EXIT_FAILURE);
-  }
   if (unlink(wtubename) == -1) {
     perror("unlink");
     exit(EXIT_FAILURE);
   }
   return EXIT_SUCCESS;
+}
+
+void *input(char *wtubename) {
+  int fdw = open(wtubename, O_WRONLY);
+  if (fdw == -1) {
+    perror("open wtube");
+    exit(EXIT_FAILURE);
+  }
+  char *temp = malloc(32);
+  if (temp == NULL) {
+    active = false;
+    return NULL;
+  }
+  int n;
+  while(active) {
+    n = scanf("%32s", temp);
+    if (n < 1) {
+      return NULL;
+    }
+    if (write(fdw, temp, (size_t)n + 1) == -1) {
+      perror("write");
+      active = false;
+      return NULL;
+    }
+  }
+  return NULL;
 }

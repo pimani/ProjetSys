@@ -60,6 +60,7 @@ int main(void) {
     pthread_t th;
     if (pthread_create(&th, NULL,(void * (*)(void*))run, temp) != 0) {
       fprintf(stderr, "Erreur\n");
+      file_vider(descriptor);
       exit(EXIT_FAILURE);
     }
   }
@@ -109,7 +110,7 @@ void * run(argsc *arg) {
     }
     if (close(fin) == -1) {
       perror("close(fin)");
-      return NULL;
+      exit(EXIT_FAILURE);
     }
     if ((fout = open(arg -> tube_out, O_RDWR)) == -1) {
       perror("Ouverture tube out");
@@ -123,14 +124,17 @@ void * run(argsc *arg) {
     }
     if (close(fout) == -1) {
       perror("close(fout)");
-      return NULL;
+      exit(EXIT_FAILURE);
     }
     // On exécute la commande
     execve(arg -> argv[0], temparg, tempenv);
     perror("execve");
-    // execle na pas fonctioner on fermer le tube et libére la mémoire
+    // execle na pas fonctioner on fermer le tube d'écriture et libére la mémoire
     free(arg);
-    close(fout);
+    if (unlink(arg -> tube_out) == -1) {
+      perror("unlink");
+      exit(EXIT_FAILURE);
+    }
     break;
   default:
     free(arg);
