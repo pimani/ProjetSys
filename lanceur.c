@@ -122,6 +122,11 @@ void * run(argsc *arg) {
       free(arg);
       return NULL;
     }
+    if (dup2(fout, STDERR_FILENO) == -1) {
+      perror("dup2");
+      free(arg);
+      return NULL;
+    }
     if (close(fout) == -1) {
       perror("close(fout)");
       exit(EXIT_FAILURE);
